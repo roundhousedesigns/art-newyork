@@ -1,0 +1,52 @@
+# Ignore cursor AI rules
+.cursor/rules/codacy.mdc
+
+node_modules/
+
+# Wordpress - ignore core, configuration, examples, uploads and logs.
+# https://github.com/github/gitignore/blob/main/WordPress.gitignore
+
+# Core
+#
+# Note: if you want to stage/commit WP core files
+# you can delete this whole section/until Configuration.
+/wp-admin/
+/wp-content/index.php
+/wp-content/languages
+/wp-content/plugins/index.php
+/wp-content/themes/index.php
+/wp-content/upgrade
+/wp-content/upgrade-temp-backup
+/wp-includes/
+/index.php
+/license.txt
+/readme.html
+/wp-*.php
+/xmlrpc.php
+
+# Configuration
+wp-config.php
+
+# Uploads
+/wp-content/uploads/
+
+# Cache
+/wp-content/cache
+/wp-content/wpo-cache
+/wp-content/object-cache.php
+
+# Log files
+*.log
+
+# htaccess
+/.htaccess
+
+# Plugins
+/wp-content/plugins/*
+/wp-content/mu-plugins/*
+
+# Themes
+/wp-content/themes/*
+
+# Plugin and theme overrides
+!/wp-content/themes/rhd-art-new-york

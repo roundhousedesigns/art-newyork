@@ -1,0 +1,207 @@
+/*
+Theme Name: RHD ART/New York
+Theme URI: 
+Author: Roundhouse Designs
+Author URI: 
+Description: A custom theme for A.R.T./New York by Roundhouse Designs.
+Requires at least: 6.9
+Tested up to: 6.9
+Requires PHP: 7.2
+Version: 1.0
+License: GNU General Public License v2 or later
+License URI: http://www.gnu.org/licenses/gpl-2.0.html
+Text Domain: rhd-art-new-york
+Tags: one-column, custom-colors, custom-menu, custom-logo, editor-style, featured-images, full-site-editing, block-patterns, rtl-language-support, sticky-post, threaded-comments, translation-ready, wide-blocks, block-styles, style-variations, accessibility-ready, blog, portfolio, news
+
+/*
+ * IMPORTANT: This file is only served on the frontend when `SCRIPT_DEBUG` is enabled;
+ * in most instances, the `style.min.css` file will be served. It is not recommended that you
+ * use the Theme File Editor to modify this stylesheet. Instead, add the necessary style
+ * overrides via "Additional CSS" in the Site Editor.
+ */
+
+/*
+ * IMPORTANT: This file is only served on the frontend when `SCRIPT_DEBUG` is enabled;
+ * in most instances, the `style.min.css` file will be served. It is not recommended that you
+ * use the Theme File Editor to modify this stylesheet. Instead, add the necessary style
+ * overrides via "Additional CSS" in the Site Editor.
+ */
+
+/*
+ * Link styles
+ * https://github.com/WordPress/gutenberg/issues/42319
+ */
+a {
+  text-decoration-thickness: 1px !important;
+  text-underline-offset: 0.1em;
+}
+
+/* Focus styles */
+:where(.wp-site-blocks *:focus) {
+  outline-width: 2px;
+  outline-style: solid;
+}
+
+/* Increase the bottom margin on submenus, so that the outline is visible. */
+.wp-block-navigation
+  .wp-block-navigation-submenu
+  .wp-block-navigation-item:not(:last-child) {
+  margin-bottom: 3px;
+}
+
+/* Increase the outline offset on the parent menu items, so that the outline does not touch the text. */
+.wp-block-navigation
+  .wp-block-navigation-item
+  .wp-block-navigation-item__content {
+  outline-offset: 4px;
+}
+
+/* Remove outline offset from the submenus, otherwise the outline is visible outside the submenu container. */
+.wp-block-navigation
+  .wp-block-navigation-item
+  ul.wp-block-navigation__submenu-container
+  .wp-block-navigation-item__content {
+  outline-offset: 0;
+}
+
+/*
+ * Progressive enhancement to reduce widows and orphans
+ * https://github.com/WordPress/gutenberg/issues/55190
+ */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+blockquote,
+caption,
+figcaption,
+p {
+  text-wrap: pretty;
+}
+
+/*
+ * Change the position of the more block on the front, by making it a block level element.
+ * https://github.com/WordPress/gutenberg/issues/65934
+*/
+.more-link {
+  display: block;
+}
+
+/*
+ * Prevents unnecessary scrollbars while handling long lines of preformatted text.
+ * https://core.trac.wordpress.org/ticket/63875
+ */
+:where(pre) {
+  overflow-x: auto;
+}
+
+/*
+ * Roundhouse Designs — Header nav strip (accent-5…1 → SPACES…DIRECTORY, theme.json)
+ */
+header {
+  .wp-block-navigation {
+    display: flex;
+    flex-direction: column;
+    min-height: 86px;
+
+    @media (min-width: 782px) {
+      height: 86px;
+    }
+  }
+
+  /* Explicit class (not &__) so postcss-nesting flattens to header .wp-block-navigation__container */
+  .wp-block-navigation__container {
+    gap: 0 !important;
+    width: 100%;
+    min-height: 86px;
+    align-items: stretch !important;
+    list-style: none;
+
+    @media (min-width: 782px) {
+      display: flex !important;
+      flex-direction: row !important;
+      flex-wrap: nowrap !important;
+      justify-content: flex-start !important;
+    }
+
+    > li {
+      display: flex;
+      min-height: 86px;
+
+      @media (min-width: 782px) {
+        flex: 1 1 0;
+        min-width: 0;
+      }
+
+      &:hover,
+      &:active,
+      &:focus {
+        > .wp-block-navigation-item__content {
+          color: var(--wp--preset--color--base) !important;
+        }
+
+        &:nth-child(1) {
+          background-color: var(--wp--preset--color--accent-5) !important;
+        }
+        &:nth-child(2) {
+          background-color: var(--wp--preset--color--accent-6) !important;
+        }
+        &:nth-child(3) {
+          background-color: var(--wp--preset--color--accent-4) !important;
+        }
+        &:nth-child(4) {
+          background-color: var(--wp--preset--color--accent-2) !important;
+        }
+        &:nth-child(5) {
+          background-color: var(--wp--preset--color--accent-3) !important;
+        }
+        &:nth-child(6) {
+          background-color: var(--wp--preset--color--accent-1) !important;
+        }
+      }
+
+      /* Submenu chevron sits beside the label; default flex:1 on the link was pushing it to the column edge */
+      &.has-child {
+        justify-content: center;
+        column-gap: 0.25em;
+
+        > .wp-block-navigation-item__content {
+          flex: 0 1 auto;
+        }
+
+				a {
+					text-decoration: inherit;
+				}
+      }
+
+      /* Top-level control only — submenu links live under .wp-block-navigation__submenu-container */
+      > .wp-block-navigation-item__content {
+        flex: 1;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        min-height: 86px;
+        padding-inline: clamp(0.5rem, 2vw, 1.25rem);
+        padding-block: 0;
+        text-decoration: none !important;
+				outline: none;
+      }
+    }
+  }
+}
+
+/*
+ * XPlor
+ */
+
+.xplor-widget {
+  width: 100%;
+  display: block;
+
+  object {
+    width: 100%;
+    min-height: 600px;
+  }
+}
