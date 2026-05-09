@@ -3,9 +3,9 @@
   "version": 3,
   "customTemplates": [
     {
-      "name": "page-no-title",
+      "name": "custom-page-no-title",
       "postTypes": ["page"],
-      "title": "Page No Title"
+      "title": "Custom Page (No Title)"
     }
   ],
   "settings": {
@@ -65,39 +65,63 @@
       "defaultSpacingSizes": false,
       "spacingSizes": [
         {
-          "name": "Tiny",
-          "size": "10px",
-          "slug": "20"
+          "slug": "xx-small",
+          "size": "0.75rem",
+          "name": "Extra Extra Small"
         },
         {
-          "name": "X-Small",
-          "size": "20px",
-          "slug": "30"
+          "slug": "extra-small",
+          "size": "0.875rem",
+          "name": "Extra Small",
+          "fluid": false
         },
         {
+          "slug": "x-small",
+          "size": "0.875rem",
+          "name": "Extra Small",
+          "fluid": false
+        },
+        {
+          "slug": "small",
+          "size": "1rem",
           "name": "Small",
-          "size": "30px",
-          "slug": "40"
+          "fluid": false
         },
         {
-          "name": "Regular",
-          "size": "clamp(30px, 5vw, 50px)",
-          "slug": "50"
+          "slug": "medium",
+          "size": "1.2rem",
+          "name": "Medium",
+          "fluid": false
         },
         {
+          "slug": "large",
+          "size": "1.5rem",
           "name": "Large",
-          "size": "clamp(30px, 7vw, 70px)",
-          "slug": "60"
+          "fluid": false
         },
         {
-          "name": "X-Large",
-          "size": "clamp(50px, 7vw, 90px)",
-          "slug": "70"
+          "slug": "x-large",
+          "size": "clamp(2rem, 2vw, 3rem)",
+          "name": "Extra Large",
+          "fluid": false
         },
         {
-          "name": "XX-Large",
-          "size": "clamp(70px, 10vw, 140px)",
-          "slug": "80"
+          "slug": "xx-large",
+          "size": "clamp(3rem, 3vw, 4rem)",
+          "name": "Extra Extra Large",
+          "fluid": false
+        },
+        {
+          "slug": "xxx-large",
+          "size": "clamp(3.7rem, 7vw, 6rem)",
+          "name": "Extra Extra Extra Large",
+          "fluid": false
+        },
+        {
+          "slug": "big-heading-text",
+          "size": "clamp(2rem, 13vw, 10rem)",
+          "name": "Special Big Heading Text",
+          "fluid": true
         }
       ],
       "units": ["%", "px", "em", "rem", "vh", "vw"]

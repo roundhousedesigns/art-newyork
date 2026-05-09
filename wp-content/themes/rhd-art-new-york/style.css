@@ -64,6 +64,9 @@ a {
   outline-offset: 0;
 }
 
+.wp-block-navigation
+  
+
 /*
  * Progressive enhancement to reduce widows and orphans
  * https://github.com/WordPress/gutenberg/issues/55190
@@ -103,12 +106,6 @@ p {
 header {
   .wp-block-navigation {
     display: flex;
-    flex-direction: column;
-    min-height: 86px;
-
-    @media (min-width: 782px) {
-      height: 86px;
-    }
   }
 
   /* Explicit class (not &__) so postcss-nesting flattens to header .wp-block-navigation__container */
@@ -118,13 +115,6 @@ header {
     min-height: 86px;
     align-items: stretch !important;
     list-style: none;
-
-    @media (min-width: 782px) {
-      display: flex !important;
-      flex-direction: row !important;
-      flex-wrap: nowrap !important;
-      justify-content: flex-start !important;
-    }
 
     > li {
       display: flex;
@@ -143,22 +133,22 @@ header {
         }
 
         &:nth-child(1) {
-          background-color: var(--wp--preset--color--accent-5) !important;
-        }
-        &:nth-child(2) {
-          background-color: var(--wp--preset--color--accent-6) !important;
-        }
-        &:nth-child(3) {
-          background-color: var(--wp--preset--color--accent-4) !important;
-        }
-        &:nth-child(4) {
-          background-color: var(--wp--preset--color--accent-2) !important;
-        }
-        &:nth-child(5) {
           background-color: var(--wp--preset--color--accent-3) !important;
         }
-        &:nth-child(6) {
+        &:nth-child(2) {
           background-color: var(--wp--preset--color--accent-1) !important;
+        }
+        &:nth-child(3) {
+          background-color: var(--wp--preset--color--accent-2) !important;
+        }
+        &:nth-child(4) {
+          background-color: var(--wp--preset--color--accent-5) !important;
+        }
+        &:nth-child(5) {
+          background-color: var(--wp--preset--color--accent-4) !important;
+        }
+        &:nth-child(6) {
+          background-color: var(--wp--preset--color--accent-6) !important;
         }
       }
 
@@ -171,9 +161,18 @@ header {
           flex: 0 1 auto;
         }
 
-				a {
-					text-decoration: inherit;
-				}
+        > .wp-block-navigation-submenu__toggle {
+          color: currentColor;
+        }
+
+        a {
+          text-decoration: inherit;
+        }
+
+        .wp-block-navigation__submenu-icon {
+          position: relative;
+          bottom: 2px;
+        }
       }
 
       /* Top-level control only — submenu links live under .wp-block-navigation__submenu-container */
@@ -186,8 +185,31 @@ header {
         padding-inline: clamp(0.5rem, 2vw, 1.25rem);
         padding-block: 0;
         text-decoration: none !important;
-				outline: none;
+        outline: none;
       }
+    }
+  }
+
+  /* Navigation breakpoint */
+  /* Show hamburger above the default 600px-782px */
+  @media (min-width: 1000px) {
+    .wp-block-navigation__responsive-container-open:not(.always-shown) {
+      display: none !important;
+    }
+    .wp-block-navigation__responsive-container:not(.hidden-by-default):not(
+        .is-menu-open
+      ) {
+      display: block !important;
+    }
+  }
+
+  /* Force hamburger below 1000px */
+  @media (max-width: 999px) {
+    .wp-block-navigation__responsive-container-open:not(.always-shown) {
+      display: flex !important;
+    }
+    .wp-block-navigation__responsive-container:not(.is-menu-open) {
+      display: none !important;
     }
   }
 }
@@ -203,5 +225,263 @@ header {
   object {
     width: 100%;
     min-height: 600px;
+  }
+}
+
+/*
+ * CTA Reveal pattern
+ * patterns/cta-reveal.php
+ *
+ * The media panel is a fixed-aspect pill that clips a full-width image.
+ * In the closed state its flex-basis is small, so the image is hidden by
+ * overflow. On hover / focus / .is-open it expands to reveal the image.
+ */
+
+.rhd-cta-reveal {
+  --rhd-cta-reveal-closed-width: 3.5rem;
+  --rhd-cta-reveal-open-width: 16rem;
+  --rhd-cta-reveal-duration: 420ms;
+  --rhd-cta-reveal-easing: cubic-bezier(0.22, 0.61, 0.36, 1);
+
+  align-items: stretch;
+  display: inline-flex;
+  flex-wrap: nowrap;
+  max-width: 100%;
+}
+
+.rhd-cta-reveal > .rhd-cta-reveal__media {
+  align-self: stretch;
+  flex: 0 0 var(--rhd-cta-reveal-closed-width);
+  min-height: 12rem;
+  overflow: hidden;
+  /* Defensively strip WP's has-global-padding and is-layout-constrained side-effects. */
+  padding: 0 !important;
+  position: relative;
+  transition: flex-basis var(--rhd-cta-reveal-duration)
+    var(--rhd-cta-reveal-easing);
+}
+
+.rhd-cta-reveal .rhd-cta-reveal__image,
+.rhd-cta-reveal .rhd-cta-reveal__image.wp-block-image {
+  height: 100%;
+  inset-block-start: 0;
+  inset-inline-end: auto;
+  inset-inline-start: 0;
+  /* is-layout-constrained children get margin-left/right: auto !important; override. */
+  margin: 0 !important;
+  max-width: none !important;
+  position: absolute;
+  width: var(--rhd-cta-reveal-open-width);
+}
+
+.rhd-cta-reveal .rhd-cta-reveal__image img {
+  display: block;
+  height: 100% !important;
+  max-width: none;
+  object-fit: cover;
+  width: 100% !important;
+}
+
+.rhd-cta-reveal > .rhd-cta-reveal__content {
+  flex: 0 1 auto;
+  min-width: 16rem;
+}
+
+.rhd-cta-reveal .rhd-cta-reveal__icon.wp-block-image {
+  margin: 0;
+}
+
+.rhd-cta-reveal .rhd-cta-reveal__icon.wp-block-image img {
+  display: block;
+  height: auto;
+}
+
+/* Hover / keyboard focus / JS-managed .is-open expands the media panel. */
+.rhd-cta-reveal:hover > .rhd-cta-reveal__media,
+.rhd-cta-reveal:focus-within > .rhd-cta-reveal__media,
+.rhd-cta-reveal.is-open > .rhd-cta-reveal__media {
+  flex-basis: var(--rhd-cta-reveal-open-width);
+}
+
+/* Touch-only / small viewports: always-expanded. */
+@media (hover: none), (max-width: 767px) {
+  .rhd-cta-reveal > .rhd-cta-reveal__media {
+    flex-basis: var(--rhd-cta-reveal-open-width);
+  }
+}
+
+/* Respect reduced-motion: snap between states, no transition. */
+@media (prefers-reduced-motion: reduce) {
+  .rhd-cta-reveal > .rhd-cta-reveal__media {
+    transition: none;
+  }
+}
+
+/* CTA Reveal pattern styles */
+.artny-cta-reveal {
+  --artny-cta-media-width: clamp(12rem, 24vw, 18rem);
+  --artny-cta-reveal-strip: 2.5rem;
+  --artny-cta-reveal-duration: 460ms;
+  --artny-cta-reveal-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: box-shadow var(--artny-cta-reveal-duration) var(--artny-cta-reveal-ease);
+  grid-template-columns: var(--artny-cta-media-width) minmax(0, 1fr) !important;
+  align-items: stretch;
+
+  .wp-block-media-text__media,
+  .wp-block-media-text__media > img {
+    border-radius: 2px;
+    border-top-right-radius: 90px;
+    transition: transform var(--artny-cta-reveal-duration) var(--artny-cta-reveal-ease),
+      filter var(--artny-cta-reveal-duration) var(--artny-cta-reveal-ease),
+      opacity var(--artny-cta-reveal-duration) var(--artny-cta-reveal-ease),
+      clip-path var(--artny-cta-reveal-duration) var(--artny-cta-reveal-ease);
+  }
+
+  .wp-block-media-text__media {
+    padding: 0;
+    margin: 0;
+    transition: transform var(--artny-cta-reveal-duration) var(--artny-cta-reveal-ease);
+    position: relative;
+    overflow: hidden;
+    min-height: 100%;
+  }
+
+  .wp-block-media-text__media > img {
+    border-width: 3px;
+    border-style: solid;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.94;
+    transform: scale(1.08);
+    clip-path: inset(0 calc(50% - var(--artny-cta-reveal-strip)) 0 0 round 0 92px 0 0);
+  }
+}
+
+.artny-cta-reveal:not(.is-active) {
+  .wp-block-media-text__media > img {
+    filter: saturate(0.9) brightness(0.95);
+  }
+}
+
+.artny-cta-reveal.is-active,
+.artny-cta-reveal:hover,
+.artny-cta-reveal:focus-within {
+  .wp-block-media-text__media > img {
+    opacity: 1;
+    transform: scale(1);
+    filter: saturate(1.05) brightness(1);
+    clip-path: inset(0 0 0 0 round 0 92px 0 0);
+  }
+}
+
+.artny-cta-reveal.accent-1 {
+  .wp-block-media-text__media {
+    background-color: var(--wp--preset--color--accent-1);
+  }
+
+  .wp-block-media-text__media > img {
+    border-color: var(--wp--preset--color--accent-1);
+  }
+
+  .wp-block-media-text__content {
+    .wp-block-buttons {
+      .wp-block-button__link {
+        background-color: var(--wp--preset--color--accent-1);
+      }
+    }
+  }
+}
+
+.artny-cta-reveal.accent-2 {
+  .wp-block-media-text__media {
+    background-color: var(--wp--preset--color--accent-2);
+  }
+
+  .wp-block-media-text__media > img {
+    border-color: var(--wp--preset--color--accent-2);
+  }
+
+  .wp-block-media-text__content {
+    .wp-block-buttons {
+      .wp-block-button__link {
+        background-color: var(--wp--preset--color--accent-2);
+      }
+    }
+  }
+}
+
+.artny-cta-reveal.accent-3 {
+  .wp-block-media-text__media {
+    background-color: var(--wp--preset--color--accent-3);
+  }
+
+  .wp-block-media-text__media > img {
+    border-color: var(--wp--preset--color--accent-3);
+  }
+
+  .wp-block-media-text__content {
+    .wp-block-buttons {
+      .wp-block-button__link {
+        background-color: var(--wp--preset--color--accent-3);
+      }
+    }
+  }
+}
+
+.artny-cta-reveal.accent-4 {
+  .wp-block-media-text__media {
+    background-color: var(--wp--preset--color--accent-4);
+  }
+
+  .wp-block-media-text__media > img {
+    border-color: var(--wp--preset--color--accent-4);
+  }
+
+  .wp-block-media-text__content {
+    .wp-block-buttons {
+      .wp-block-button__link {
+        background-color: var(--wp--preset--color--accent-4);
+      }
+    }
+  }
+}
+
+.artny-cta-reveal.accent-5 {
+  .wp-block-media-text__media {
+    background-color: var(--wp--preset--color--accent-5);
+  }
+
+  .wp-block-media-text__media > img {
+    border-color: var(--wp--preset--color--accent-5);
+  }
+
+  .wp-block-media-text__content {
+    .wp-block-buttons {
+      .wp-block-button__link {
+        background-color: var(--wp--preset--color--accent-5);
+      }
+    }
+  }
+}
+
+.artny-cta-reveal.accent-6 {
+  .wp-block-media-text__media {
+    background-color: var(--wp--preset--color--accent-6);
+  }
+
+  .wp-block-media-text__media > img {
+    border-color: var(--wp--preset--color--accent-6);
+  }
+
+  .wp-block-media-text__content {
+    .wp-block-buttons {
+      .wp-block-button__link {
+        background-color: var(--wp--preset--color--accent-6);
+      }
+    }
   }
 }
