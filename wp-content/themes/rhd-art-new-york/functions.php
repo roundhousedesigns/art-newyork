@@ -24,17 +24,22 @@ if ( !function_exists( 'rhd_art_new_york_post_format_setup' ) ) {
 }
 add_action( 'after_setup_theme', 'rhd_art_new_york_post_format_setup' );
 
-// Enqueues editor-style.css in the editors.
+// Enqueues editor-style.css and the main theme stylesheet in the editors.
 if ( !function_exists( 'rhd_art_new_york_editor_style' ) ) {
 	/**
-	 * Enqueues editor-style.css in the editors.
+	 * Enqueues editor-style.css and the main theme stylesheet in the editors.
 	 *
 	 * @since RHD ART/New York 1.0
 	 *
 	 * @return void
 	 */
 	function rhd_art_new_york_editor_style() {
-		add_editor_style( 'assets/css/editor-style.css' );
+		$suffix = SCRIPT_DEBUG ? '' : '.min';
+
+		add_editor_style( [
+			'style' . $suffix . '.css',
+			'assets/css/editor-style.css',
+		] );
 	}
 }
 add_action( 'after_setup_theme', 'rhd_art_new_york_editor_style' );

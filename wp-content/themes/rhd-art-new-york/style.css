@@ -27,6 +27,10 @@ Tags: one-column, custom-colors, custom-menu, custom-logo, editor-style, feature
  * overrides via "Additional CSS" in the Site Editor.
  */
 
+html, body {
+  font-size: 18px;
+}
+
 /*
  * Link styles
  * https://github.com/WordPress/gutenberg/issues/42319
@@ -36,11 +40,18 @@ a {
   text-underline-offset: 0.1em;
 }
 
+/*
+ * Bold
+ */
+strong {
+  font-weight: 600;
+}
+
 /* Focus styles */
-:where(.wp-site-blocks *:focus) {
+/* :where(.wp-site-blocks *:focus) {
   outline-width: 2px;
   outline-style: solid;
-}
+} */
 
 /* Increase the bottom margin on submenus, so that the outline is visible. */
 .wp-block-navigation
@@ -64,8 +75,58 @@ a {
   outline-offset: 0;
 }
 
+/*
+ * Second-level and deeper: '+' for items that expose another submenu (not top-level strip).
+ */
 .wp-block-navigation
-  
+  ul.wp-block-navigation__submenu-container
+  .wp-block-navigation-item.has-child
+  > .wp-block-navigation-submenu__toggle
+  .wp-block-navigation__submenu-icon {
+  display: none;
+}
+
+.wp-block-navigation
+  ul.wp-block-navigation__submenu-container
+  .wp-block-navigation-item.has-child
+  > .wp-block-navigation-submenu__toggle::after {
+  content: "\002B";
+  display: inline-block;
+  margin-inline-start: 0.35em;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.wp-block-navigation
+  ul.wp-block-navigation__submenu-container
+  .wp-block-navigation-item.has-child
+  > .wp-block-navigation-submenu__toggle[aria-expanded="true"]::after {
+  content: "\2013";
+}
+
+.wp-block-navigation
+  ul.wp-block-navigation__submenu-container
+  .wp-block-navigation-item.has-child:not(
+    :has(> .wp-block-navigation-submenu__toggle)
+  )
+  > .wp-block-navigation-item__content::after {
+  content: "\002B";
+  display: inline-block;
+  margin-inline-start: 0.35em;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.wp-block-navigation
+  ul.wp-block-navigation__submenu-container
+  .wp-block-navigation-item.has-child:not(
+    :has(> .wp-block-navigation-submenu__toggle)
+  )
+  > .wp-block-navigation-item__content[aria-expanded="true"]::after {
+  content: "\2013";
+}
 
 /*
  * Progressive enhancement to reduce widows and orphans
@@ -108,6 +169,20 @@ header {
     display: flex;
   }
 
+  /*
+   * Submenu width: at least the parent item’s track; wider when labels need it.
+   * min-width % + width max-content reflows on viewport resize without JS.
+   */
+  .wp-block-navigation .wp-block-navigation-item.has-child {
+    position: relative;
+  }
+
+  .wp-block-navigation .wp-block-navigation__submenu-container {
+    box-sizing: border-box;
+    min-width: 100% !important;
+    width: max-content !important;
+  }
+
   /* Explicit class (not &__) so postcss-nesting flattens to header .wp-block-navigation__container */
   .wp-block-navigation__container {
     gap: 0 !important;
@@ -132,6 +207,10 @@ header {
           color: var(--wp--preset--color--base) !important;
         }
 
+        /* .wp-block-navigation__submenu-icon {
+          color: var(--wp--preset--color--base) !important;
+        } */
+
         &:nth-child(1) {
           background-color: var(--wp--preset--color--accent-3) !important;
         }
@@ -152,6 +231,87 @@ header {
         }
       }
 
+      /*
+       * Direct submenu open (click): strip + dropdown share the same surface as hover.
+       * --rhd-top-submenu-surface is inherited by .wp-block-navigation__submenu-container (core uses preset base = white).
+       */
+      &:nth-child(1):has(
+          > .wp-block-navigation-submenu__toggle[aria-expanded="true"]
+        ) {
+        --rhd-top-submenu-surface: var(--wp--preset--color--accent-3);
+        background-color: var(--rhd-top-submenu-surface) !important;
+
+        > .wp-block-navigation-item__content {
+          color: var(--wp--preset--color--base) !important;
+        }
+      }
+
+      &:nth-child(2):has(
+          > .wp-block-navigation-submenu__toggle[aria-expanded="true"]
+        ) {
+        --rhd-top-submenu-surface: var(--wp--preset--color--accent-1);
+        background-color: var(--rhd-top-submenu-surface) !important;
+
+        > .wp-block-navigation-item__content {
+          color: var(--wp--preset--color--base) !important;
+        }
+      }
+
+      &:nth-child(3):has(
+          > .wp-block-navigation-submenu__toggle[aria-expanded="true"]
+        ) {
+        --rhd-top-submenu-surface: var(--wp--preset--color--accent-2);
+        background-color: var(--rhd-top-submenu-surface) !important;
+
+        > .wp-block-navigation-item__content {
+          color: var(--wp--preset--color--base) !important;
+        }
+      }
+
+      &:nth-child(4):has(
+          > .wp-block-navigation-submenu__toggle[aria-expanded="true"]
+        ) {
+        --rhd-top-submenu-surface: var(--wp--preset--color--accent-5);
+        background-color: var(--rhd-top-submenu-surface) !important;
+
+        > .wp-block-navigation-item__content {
+          color: var(--wp--preset--color--base) !important;
+        }
+      }
+
+      &:nth-child(5):has(
+          > .wp-block-navigation-submenu__toggle[aria-expanded="true"]
+        ) {
+        --rhd-top-submenu-surface: var(--wp--preset--color--accent-4);
+        background-color: var(--rhd-top-submenu-surface) !important;
+
+        > .wp-block-navigation-item__content {
+          color: var(--wp--preset--color--base) !important;
+        }
+      }
+
+      &:nth-child(6):has(
+          > .wp-block-navigation-submenu__toggle[aria-expanded="true"]
+        ) {
+        --rhd-top-submenu-surface: var(--wp--preset--color--accent-6);
+        background-color: var(--rhd-top-submenu-surface) !important;
+
+        > .wp-block-navigation-item__content {
+          color: var(--wp--preset--color--base) !important;
+        }
+      }
+
+      &:nth-child(n + 7):has(
+          > .wp-block-navigation-submenu__toggle[aria-expanded="true"]
+        ) {
+        --rhd-top-submenu-surface: var(--wp--preset--color--accent-3);
+        background-color: var(--rhd-top-submenu-surface) !important;
+
+        > .wp-block-navigation-item__content {
+          color: var(--wp--preset--color--base) !important;
+        }
+      }
+
       /* Submenu chevron sits beside the label; default flex:1 on the link was pushing it to the column edge */
       &.has-child {
         justify-content: center;
@@ -159,6 +319,12 @@ header {
 
         > .wp-block-navigation-item__content {
           flex: 0 1 auto;
+        }
+
+        /* Open-on-click: top control is a <button>; grow it so the full strip column (the <li>) is clickable */
+        &.open-on-click > .wp-block-navigation-item__content {
+          flex: 1 1 0;
+          min-width: 0;
         }
 
         > .wp-block-navigation-submenu__toggle {
@@ -170,8 +336,10 @@ header {
         }
 
         .wp-block-navigation__submenu-icon {
-          position: relative;
-          bottom: 2px;
+          visibility: hidden;
+          margin: 0;
+          /* position: relative;
+          bottom: 2px; */
         }
       }
 
@@ -187,6 +355,27 @@ header {
         text-decoration: none !important;
         outline: none;
       }
+    }
+
+    /* Flyout / dropdown panels (core defaults to preset base = white) */
+    > li:has(> .wp-block-navigation-submenu__toggle[aria-expanded="true"])
+      .wp-block-navigation__submenu-container {
+      background-color: var(
+        --rhd-top-submenu-surface,
+        var(--wp--preset--color--accent-3)
+      ) !important;
+      color: var(--wp--preset--color--base);
+    }
+
+    > li:has(> .wp-block-navigation-submenu__toggle[aria-expanded="true"])
+      .wp-block-navigation__submenu-container
+      .wp-block-navigation-item__content {
+      color: var(--wp--preset--color--base) !important;
+    }
+
+    /* First-tier dropdown only: breathing room above the first link (matches vertical rhythm) */
+    > li > .wp-block-navigation__submenu-container {
+      padding-top: calc(var(--wp--preset--spacing--x-small, 0.875rem) - 0.1rem);
     }
   }
 
@@ -212,6 +401,24 @@ header {
       display: none !important;
     }
   }
+}
+
+/*
+ * Resources top-level submenu control only: theme.json elements.button :hover uses a
+ * light color-mix background that clashes with strip/overlay text. Keep resting colors on hover.
+ */
+header
+  .wp-block-navigation
+  button.wp-block-navigation-submenu__toggle[aria-label="Resources submenu"]:hover,
+header
+  .wp-block-navigation
+  button.wp-block-navigation-submenu__toggle[aria-label="Resources submenu"]:active,
+header
+  .wp-block-navigation
+  button.wp-block-navigation-submenu__toggle[aria-label="Resources submenu"]:focus-visible {
+  background-color: transparent !important;
+  background-image: none !important;
+  border-color: transparent !important;
 }
 
 /*
@@ -319,11 +526,12 @@ header {
 
 /* CTA Reveal pattern styles */
 .artny-cta-reveal {
-  --artny-cta-media-width: clamp(12rem, 24vw, 18rem);
+  --artny-cta-media-width: clamp(12rem, 24vw, 14rem);
   --artny-cta-reveal-strip: 2.5rem;
   --artny-cta-reveal-duration: 460ms;
   --artny-cta-reveal-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
-  transition: box-shadow var(--artny-cta-reveal-duration) var(--artny-cta-reveal-ease);
+  transition: box-shadow var(--artny-cta-reveal-duration)
+    var(--artny-cta-reveal-ease);
   grid-template-columns: var(--artny-cta-media-width) minmax(0, 1fr) !important;
   align-items: stretch;
 
@@ -331,7 +539,8 @@ header {
   .wp-block-media-text__media > img {
     border-radius: 2px;
     border-top-right-radius: 90px;
-    transition: transform var(--artny-cta-reveal-duration) var(--artny-cta-reveal-ease),
+    transition:
+      transform var(--artny-cta-reveal-duration) var(--artny-cta-reveal-ease),
       filter var(--artny-cta-reveal-duration) var(--artny-cta-reveal-ease),
       opacity var(--artny-cta-reveal-duration) var(--artny-cta-reveal-ease),
       clip-path var(--artny-cta-reveal-duration) var(--artny-cta-reveal-ease);
@@ -340,7 +549,8 @@ header {
   .wp-block-media-text__media {
     padding: 0;
     margin: 0;
-    transition: transform var(--artny-cta-reveal-duration) var(--artny-cta-reveal-ease);
+    transition: transform var(--artny-cta-reveal-duration)
+      var(--artny-cta-reveal-ease);
     position: relative;
     overflow: hidden;
     min-height: 100%;
@@ -357,7 +567,9 @@ header {
     object-fit: cover;
     opacity: 0.94;
     transform: scale(1.08);
-    clip-path: inset(0 calc(50% - var(--artny-cta-reveal-strip)) 0 0 round 0 92px 0 0);
+    clip-path: inset(
+      0 calc(50% - var(--artny-cta-reveal-strip)) 0 0 round 0 92px 0 0
+    );
   }
 }
 
@@ -484,4 +696,73 @@ header {
       }
     }
   }
+}
+
+/*
+ * CTA Grid links
+ *
+ * Enhanced by assets/js/frontend.js by adding `.artny-cta-grid-links` to the
+ * target `wp-block-group.is-layout-grid` container and toggling `.is-active`
+ * on card groups for hover + keyboard focus.
+ */
+.artny-cta-grid-links {
+  --artny-cta-grid-transition: 180ms;
+  --artny-cta-grid-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.artny-cta-grid-links > .wp-block-group {
+  border-radius: 2px;
+  transition:
+    transform var(--artny-cta-grid-transition) var(--artny-cta-grid-ease),
+    box-shadow var(--artny-cta-grid-transition) var(--artny-cta-grid-ease),
+    background-color var(--artny-cta-grid-transition) var(--artny-cta-grid-ease);
+}
+
+.artny-cta-grid-links > .wp-block-group.is-active,
+.artny-cta-grid-links > .wp-block-group:hover,
+.artny-cta-grid-links > .wp-block-group:focus-within {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
+}
+
+.artny-cta-grid-links :where(a) {
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.12em;
+}
+
+.artny-cta-grid-links > .wp-block-group.is-active :where(a),
+.artny-cta-grid-links > .wp-block-group:hover :where(a),
+.artny-cta-grid-links > .wp-block-group:focus-within :where(a) {
+  text-decoration-line: underline;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .artny-cta-grid-links > .wp-block-group {
+    transition: none;
+  }
+
+  .artny-cta-grid-links > .wp-block-group.is-active,
+  .artny-cta-grid-links > .wp-block-group:hover,
+  .artny-cta-grid-links > .wp-block-group:focus-within {
+    transform: none;
+  }
+}
+
+/*
+ * Sugar Calendar
+ */
+.wp-block-cover {
+  .artny-event-date {
+    font-size: var(--wp--preset--font-size--large);
+    font-weight: 600;
+    color: var(--wp--preset--color--base);
+    margin: 0;
+    padding: 0;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+}
+
+.sc-frontend-single-event__details__label {
+  text-transform: uppercase;
 }
