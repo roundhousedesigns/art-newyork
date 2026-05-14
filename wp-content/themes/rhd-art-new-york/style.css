@@ -536,7 +536,7 @@ header
   align-items: stretch;
 
   .wp-block-media-text__media,
-  .wp-block-media-text__media > img {
+  .wp-block-media-text__media img {
     border-radius: 2px;
     border-top-right-radius: 90px;
     transition:
@@ -556,7 +556,7 @@ header
     min-height: 100%;
   }
 
-  .wp-block-media-text__media > img {
+  .wp-block-media-text__media img {
     border-width: 3px;
     border-style: solid;
     position: absolute;
@@ -574,7 +574,7 @@ header
 }
 
 .artny-cta-reveal:not(.is-active) {
-  .wp-block-media-text__media > img {
+  .wp-block-media-text__media img {
     filter: saturate(0.9) brightness(0.95);
   }
 }
@@ -582,7 +582,7 @@ header
 .artny-cta-reveal.is-active,
 .artny-cta-reveal:hover,
 .artny-cta-reveal:focus-within {
-  .wp-block-media-text__media > img {
+  .wp-block-media-text__media img {
     opacity: 1;
     transform: scale(1);
     filter: saturate(1.05) brightness(1);
@@ -595,7 +595,7 @@ header
     background-color: var(--wp--preset--color--accent-1);
   }
 
-  .wp-block-media-text__media > img {
+  .wp-block-media-text__media img {
     border-color: var(--wp--preset--color--accent-1);
   }
 
@@ -613,7 +613,7 @@ header
     background-color: var(--wp--preset--color--accent-2);
   }
 
-  .wp-block-media-text__media > img {
+  .wp-block-media-text__media img {
     border-color: var(--wp--preset--color--accent-2);
   }
 
@@ -631,7 +631,7 @@ header
     background-color: var(--wp--preset--color--accent-3);
   }
 
-  .wp-block-media-text__media > img {
+  .wp-block-media-text__media img {
     border-color: var(--wp--preset--color--accent-3);
   }
 
@@ -649,7 +649,7 @@ header
     background-color: var(--wp--preset--color--accent-4);
   }
 
-  .wp-block-media-text__media > img {
+  .wp-block-media-text__media img {
     border-color: var(--wp--preset--color--accent-4);
   }
 
@@ -667,7 +667,7 @@ header
     background-color: var(--wp--preset--color--accent-5);
   }
 
-  .wp-block-media-text__media > img {
+  .wp-block-media-text__media img {
     border-color: var(--wp--preset--color--accent-5);
   }
 
@@ -685,7 +685,7 @@ header
     background-color: var(--wp--preset--color--accent-6);
   }
 
-  .wp-block-media-text__media > img {
+  .wp-block-media-text__media img {
     border-color: var(--wp--preset--color--accent-6);
   }
 
@@ -702,50 +702,32 @@ header
  * CTA Grid links
  *
  * Enhanced by assets/js/frontend.js by adding `.artny-cta-grid-links` to the
- * target `wp-block-group.is-layout-grid` container and toggling `.is-active`
- * on card groups for hover + keyboard focus.
+ * grid wrapper. Cards are direct child `.wp-block-media-text.artny-cta-reveal`
+ * blocks (not `.wp-block-group`).
  */
-.artny-cta-grid-links {
-  --artny-cta-grid-transition: 180ms;
-  --artny-cta-grid-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-.artny-cta-grid-links > .wp-block-group {
+.artny-cta-grid-links > .wp-block-media-text.artny-cta-reveal {
   border-radius: 2px;
-  transition:
-    transform var(--artny-cta-grid-transition) var(--artny-cta-grid-ease),
-    box-shadow var(--artny-cta-grid-transition) var(--artny-cta-grid-ease),
-    background-color var(--artny-cta-grid-transition) var(--artny-cta-grid-ease);
 }
 
-.artny-cta-grid-links > .wp-block-group.is-active,
-.artny-cta-grid-links > .wp-block-group:hover,
-.artny-cta-grid-links > .wp-block-group:focus-within {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
-}
-
-.artny-cta-grid-links :where(a) {
+/* Body copy / image links only — not CTA arrow buttons. */
+.artny-cta-grid-links :where(a:not(.wp-element-button)) {
   text-decoration-thickness: 1px;
   text-underline-offset: 0.12em;
 }
 
-.artny-cta-grid-links > .wp-block-group.is-active :where(a),
-.artny-cta-grid-links > .wp-block-group:hover :where(a),
-.artny-cta-grid-links > .wp-block-group:focus-within :where(a) {
+.artny-cta-grid-links > .wp-block-media-text.artny-cta-reveal.is-active
+  :where(a:not(.wp-element-button)),
+.artny-cta-grid-links > .wp-block-media-text.artny-cta-reveal:hover
+  :where(a:not(.wp-element-button)),
+.artny-cta-grid-links > .wp-block-media-text.artny-cta-reveal:focus-within
+  :where(a:not(.wp-element-button)) {
   text-decoration-line: underline;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .artny-cta-grid-links > .wp-block-group {
-    transition: none;
-  }
-
-  .artny-cta-grid-links > .wp-block-group.is-active,
-  .artny-cta-grid-links > .wp-block-group:hover,
-  .artny-cta-grid-links > .wp-block-group:focus-within {
-    transform: none;
-  }
+.artny-cta-grid-links .wp-block-button__link.wp-element-button,
+.artny-cta-grid-links .wp-block-button__link.wp-element-button:hover,
+.artny-cta-grid-links .wp-block-button__link.wp-element-button:focus {
+  text-decoration-line: none;
 }
 
 /*
