@@ -92,6 +92,15 @@ if ( !function_exists( 'rhd_art_new_york_enqueue_scripts' ) ) {
 				'strategy'  => 'defer',
 			]
 		);
+
+		wp_localize_script(
+			'rhd-art-new-york-frontend',
+			'rhdArtNewYork',
+			[
+				'sliderArrowLeft'  => get_parent_theme_file_uri( 'assets/images/ARTNY_website_icons_arrow_left.png' ),
+				'sliderArrowRight' => get_parent_theme_file_uri( 'assets/images/ARTNY_website_icons_arrow_right.png' ),
+			]
+		);
 	}
 }
 add_action( 'wp_enqueue_scripts', 'rhd_art_new_york_enqueue_scripts' );

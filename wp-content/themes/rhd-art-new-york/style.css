@@ -195,7 +195,7 @@ header {
       display: flex;
       min-height: 86px;
 
-      @media (min-width: 782px) {
+      @media (min-width: 1000px) {
         flex: 1 1 0;
         min-width: 0;
       }
@@ -330,6 +330,7 @@ header {
 
         > .wp-block-navigation-submenu__toggle {
           color: currentColor;
+          padding-right: 0;
         }
 
         a {
@@ -380,6 +381,29 @@ header {
         padding-top: calc(var(--wp--preset--spacing--x-small, 0.875rem) - 0.1rem);
       }
     }
+  }
+
+  /*
+   * Mobile menu toggle: three-line hamburger (replaces core's two-line SVG).
+   */
+  .wp-block-navigation__responsive-container-open {
+    align-items: center;
+    justify-content: center;
+  }
+
+  .wp-block-navigation__responsive-container-open svg {
+    display: none;
+  }
+
+  .wp-block-navigation__responsive-container-open::before {
+    content: "";
+    display: block;
+    width: 24px;
+    height: 18px;
+    background:
+      linear-gradient(currentColor, currentColor) 0 0 / 100% 2px no-repeat,
+      linear-gradient(currentColor, currentColor) 0 50% / 100% 2px no-repeat,
+      linear-gradient(currentColor, currentColor) 0 100% / 100% 2px no-repeat;
   }
 
   /* Navigation breakpoint */
@@ -457,6 +481,7 @@ header {
     }
 
     /* theme.json sets medium on nav items; bump overlay links/buttons to large */
+    /* TODO make this change in theme.json and clean up here */
     .wp-block-navigation__responsive-container.is-menu-open
       .wp-block-navigation__responsive-container-content
       a.wp-block-navigation-item__content,
@@ -671,8 +696,34 @@ header
   grid-template-columns: var(--artny-cta-media-width) minmax(0, 1fr) !important;
   align-items: stretch;
 
+  /* Card link wraps media + content (see assets/js/frontend.js). */
+  > .artny-cta-reveal__link {
+    align-items: stretch;
+    color: inherit;
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    text-decoration: none;
+    width: 100%;
+  }
+
+  > .artny-cta-reveal__link:focus-visible {
+    outline: 2px solid var(--wp--preset--color--contrast, currentColor);
+    outline-offset: 3px;
+  }
+
+  /* Restore core media-text content inset lost when the card link wraps columns. */
+  > .artny-cta-reveal__link > .wp-block-media-text__content {
+    padding: 0 4%;
+    word-break: break-word;
+  }
+
+  > .artny-cta-reveal__link > .wp-block-media-text__media {
+    align-self: stretch;
+  }
+
   .wp-block-media-text__media,
-  .wp-block-media-text__media img {
+  .wp-block-media-text__media img   {
     border-radius: 2px;
     border-top-right-radius: 90px;
     transition:
@@ -845,19 +896,34 @@ header
   border-radius: 2px;
 }
 
-/* Body copy / image links only — not CTA arrow buttons. */
-.artny-cta-grid-links :where(a:not(.wp-element-button)) {
+/* Body copy links only — not the card link or CTA arrow buttons. */
+.artny-cta-grid-links
+  :where(a:not(.wp-element-button):not(.artny-cta-reveal__link)) {
   text-decoration-thickness: 1px;
   text-underline-offset: 0.12em;
 }
 
 .artny-cta-grid-links > .wp-block-media-text.artny-cta-reveal.is-active
-  :where(a:not(.wp-element-button)),
+  :where(a:not(.wp-element-button):not(.artny-cta-reveal__link)),
 .artny-cta-grid-links > .wp-block-media-text.artny-cta-reveal:hover
-  :where(a:not(.wp-element-button)),
+  :where(a:not(.wp-element-button):not(.artny-cta-reveal__link)),
 .artny-cta-grid-links > .wp-block-media-text.artny-cta-reveal:focus-within
-  :where(a:not(.wp-element-button)) {
+  :where(a:not(.wp-element-button):not(.artny-cta-reveal__link)) {
   text-decoration-line: underline;
+}
+
+.artny-cta-grid-links > .wp-block-media-text.artny-cta-reveal > .artny-cta-reveal__link,
+.artny-cta-grid-links
+  > .wp-block-media-text.artny-cta-reveal.is-active
+  > .artny-cta-reveal__link,
+.artny-cta-grid-links
+  > .wp-block-media-text.artny-cta-reveal:hover
+  > .artny-cta-reveal__link,
+.artny-cta-grid-links
+  > .wp-block-media-text.artny-cta-reveal:focus-within
+  > .artny-cta-reveal__link {
+  cursor: pointer;
+  text-decoration-line: none;
 }
 
 .artny-cta-grid-links .wp-block-button__link.wp-element-button,
@@ -883,4 +949,35 @@ header
 
 .sc-frontend-single-event__details__label {
   text-transform: uppercase;
+}
+
+/*
+ * Superblock Slider — custom prev/next arrows (see assets/js/frontend.js).
+ */
+.superblockslider__button__previous--icon,
+.superblockslider__button__next--icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.superblockslider__button__previous--icon .artny-slider-arrow,
+.superblockslider__button__next--icon .artny-slider-arrow {
+  display: block;
+  width: 48px;
+  height: auto;
+  max-height: 58px;
+  object-fit: contain;
+}
+
+.superblockslider.artny-slider-arrows-ready
+  .superblockslider__button__navigation
+  .superblockslider__button__previous--icon
+  svg,
+.superblockslider.artny-slider-arrows-ready
+  .superblockslider__button__navigation
+  .superblockslider__button__next--icon
+  svg {
+  display: none;
 }

@@ -400,9 +400,6 @@
               "textDecoration": "none"
             }
           }
-        },
-        "typography": {
-          "fontSize": "var(--wp--preset--font-size--medium)"
         }
       },
       "core/post-comments-form": {
