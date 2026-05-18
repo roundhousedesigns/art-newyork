@@ -1,4 +1,5 @@
 ---
+description: 
 alwaysApply: true
 ---
 
@@ -7,3 +8,6 @@ alwaysApply: true
 ## Description
 
 This is a WordPress website for the ART/New York organization. The site customizations currently consist of a custom theme, `rhd-art-new-york`.
+
+## Perfectmind integration
+API Documentation for the Perfectmind integration is here: https://drive.google.com/file/d/1X8HgElUwBL-KHQG1eClP919hsWjlWrXx/view
