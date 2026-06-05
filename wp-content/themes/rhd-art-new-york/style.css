@@ -75,6 +75,12 @@ strong {
   outline-offset: 0;
 }
 
+@media (max-width: 999px) {
+  .wp-block-navigation {
+    justify-content: flex-end;
+  }
+}
+
 /*
  * Second-level and deeper: '+' for items that expose another submenu (not top-level strip).
  */

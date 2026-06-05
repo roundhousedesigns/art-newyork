@@ -11,3 +11,17 @@ This is a WordPress website for the ART/New York organization. The site customiz
 
 ## Perfectmind integration
 API Documentation for the Perfectmind integration is here: https://drive.google.com/file/d/1X8HgElUwBL-KHQG1eClP919hsWjlWrXx/view
+
+## RHD block plugins (e.g. `rhd-artny-directory`)
+
+- Follow the pattern in `wp-content/plugins/rhd-cover-parallax-block` and `wp-content/plugins/rhd-artny-directory`: `block.json` + `render.php`, Roundhouse naming (`rhd-*`), theme-aligned markup using `wp-block-*` classes and `theme.json` CSS variables.
+- **Dynamic blocks must register in the editor client-side (WP 7+).** Server-only `register_block_type()` is not enough — the editor will show “Your site doesn't include support for the block.” Register `assets/editor.js` explicitly in PHP with dependencies: `wp-blocks`, `wp-element`, `wp-block-editor`, `wp-server-side-render`, `wp-components`. Do not rely on `block.json` `"editorScript": "file:./…"` alone; auto-registered editor scripts may load with **empty deps** and fail silently.
+- Use `ServerSideRender` in `edit` for editor preview of dynamic blocks. Guard `registerBlockType` with `getBlockType()` to avoid double registration.
+- **Render core block output via `do_blocks()` or `render_block()`** — do not hand-roll markup for blocks that ship icons/assets (e.g. `core/social-links` needs SVG icons from core). Match demo page block attributes (icon colors, layout) when mirroring existing designs.
+- When renaming a plugin: rename folder + main file, update all slugs/classes/text domains/block names, swap `active_plugins` entry, and update `<!-- wp:namespace/block -->` comments in post content. Register a legacy block name if content may still reference the old name.
+- Verify on dev: plugin active, block registered after `init`, page renders expected markup (`docker exec … php -r "require wp-load.php; …"`).
+
+## UI details in directory cards
+
+- `<details><summary>` defaults to bold in browsers — set `font-weight: 400` (or `normal`) explicitly when summary should match body text.
+- Scope card typography overrides under plugin classes (e.g. `.rhd-artny-directory__card .wp-block-details`) using theme font-size presets (`--wp--preset--font-size--small`).
