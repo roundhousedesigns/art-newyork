@@ -12,6 +12,14 @@ This is a WordPress website for the ART/New York organization. The site customiz
 ## Perfectmind integration
 API Documentation for the Perfectmind integration is here: https://drive.google.com/file/d/1X8HgElUwBL-KHQG1eClP919hsWjlWrXx/view
 
+## Xplor/PerfectMind API access
+PERFECTMIND_BASE_URL, PERFECTMIND_API_KEY, PERFECTMIND_CLIENT_NUMBER are all defined constants.
+
+- PERFECTMIN_BASE_URL is the remote Xplor/PerfectMind server to query.
+- PERFECTMIND_REST_BASE is the REST endpoint base to query.
+- PERFECTMIND_API_KEY is sent in each REST operation as the X-Access-Key header.
+- PERFECTMIND_CLIENT_NUMBER is sent in each REST operation as the X-Client-Number header.
+
 ## RHD block plugins (e.g. `rhd-artny-directory`)
 
 - Follow the pattern in `wp-content/plugins/rhd-cover-parallax-block` and `wp-content/plugins/rhd-artny-directory`: `block.json` + `render.php`, Roundhouse naming (`rhd-*`), theme-aligned markup using `wp-block-*` classes and `theme.json` CSS variables.
