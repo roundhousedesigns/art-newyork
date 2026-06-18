@@ -1,0 +1,24 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "rhd/artny-directory",
+	"version": "1.0.0",
+	"title": "ART/NY Directory",
+	"category": "widgets",
+	"icon": "groups",
+	"description": "Searchable member directory with filters for Perfectmind/Xplor contacts.",
+	"keywords": ["directory", "contacts", "perfectmind", "members"],
+	"textdomain": "rhd-artny-directory",
+	"supports": {
+		"html": false,
+		"align": ["wide", "full"]
+	},
+	"attributes": {
+		"align": {
+			"type": "string"
+		}
+	},
+	"viewScript": "file:./assets/view.js",
+	"style": "file:./assets/style.css",
+	"render": "file:./render.php"
+}

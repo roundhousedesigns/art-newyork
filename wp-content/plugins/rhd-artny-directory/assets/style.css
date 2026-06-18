@@ -1,0 +1,382 @@
+/**
+ * Contacts Directory — filter bar and results layout.
+ * Uses theme.json presets via CSS variables.
+ */
+
+.rhd-artny-directory {
+	--rhd-directory-gap: var(--wp--preset--spacing--50, 1.5rem);
+	--rhd-directory-border: var(--wp--preset--color--accent-6, #a51d3f);
+	--rhd-directory-surface: var(--wp--preset--color--base, #fff);
+	--rhd-directory-text: var(--wp--preset--color--contrast, #111);
+	margin-block: var(--wp--preset--spacing--60, 2rem) 0;
+	padding-block: var(--wp--preset--spacing--60, 2rem);
+}
+
+.rhd-artny-directory__filters {
+	margin-bottom: var(--wp--preset--spacing--70, 2.5rem);
+}
+
+.rhd-artny-directory__filters-header {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: var(--wp--preset--spacing--30, 1rem);
+	justify-content: space-between;
+	margin-bottom: var(--wp--preset--spacing--40, 1.25rem);
+}
+
+.rhd-artny-directory__filters-form {
+	display: grid;
+	gap: var(--rhd-directory-gap);
+	padding: var(--wp--preset--spacing--40, 1.25rem);
+	border: 1px solid var(--rhd-directory-border);
+	border-radius: 10px;
+	background: var(--rhd-directory-surface);
+}
+
+.rhd-artny-directory__search-label {
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+	font-weight: 600;
+}
+
+.rhd-artny-directory__search-input {
+	width: 100%;
+	max-width: 32rem;
+	padding: 0.65rem 0.85rem;
+	border: 1px solid var(--rhd-directory-border);
+	border-radius: 6px;
+	font: inherit;
+	color: var(--rhd-directory-text);
+	background: var(--rhd-directory-surface);
+}
+
+.rhd-artny-directory__search-input:focus {
+	outline: 2px solid var(--rhd-directory-border);
+	outline-offset: 2px;
+}
+
+.rhd-artny-directory__filter-groups {
+	display: grid;
+	gap: var(--wp--preset--spacing--30, 1rem);
+	grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr));
+}
+
+.rhd-artny-directory__filter-dropdown {
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+	min-width: 0;
+}
+
+.rhd-artny-directory__filter-dropdown-control {
+	position: relative;
+}
+
+.rhd-artny-directory__filter-dropdown-label {
+	font-weight: 600;
+}
+
+.rhd-artny-directory__filter-dropdown-trigger {
+	align-items: center;
+	appearance: none;
+	background: var(--rhd-directory-surface);
+	border: 1px solid var(--rhd-directory-border);
+	border-radius: 6px;
+	color: var(--rhd-directory-text);
+	cursor: pointer;
+	display: flex;
+	font: inherit;
+	gap: 0.5rem;
+	justify-content: space-between;
+	min-height: 2.75rem;
+	padding: 0.55rem 0.85rem;
+	text-align: left;
+	width: 100%;
+}
+
+.rhd-artny-directory__filter-dropdown-trigger:hover,
+.rhd-artny-directory__filter-dropdown-trigger:focus-visible {
+	outline: 2px solid var(--rhd-directory-border);
+	outline-offset: 2px;
+}
+
+.rhd-artny-directory__filter-dropdown-trigger[aria-expanded="true"] {
+	border-bottom-left-radius: 0;
+	border-bottom-right-radius: 0;
+}
+
+.rhd-artny-directory__filter-dropdown-summary {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.rhd-artny-directory__filter-dropdown-icon {
+	border-left: 5px solid transparent;
+	border-right: 5px solid transparent;
+	border-top: 6px solid currentColor;
+	flex-shrink: 0;
+	margin-top: 0.15rem;
+	transition: transform 150ms ease;
+}
+
+.rhd-artny-directory__filter-dropdown-trigger[aria-expanded="true"] .rhd-artny-directory__filter-dropdown-icon {
+	transform: rotate(180deg);
+}
+
+.rhd-artny-directory__filter-dropdown-panel {
+	background: var(--rhd-directory-surface);
+	border: 1px solid var(--rhd-directory-border);
+	border-radius: 0 0 6px 6px;
+	box-shadow: 0 10px 24px rgb(17 17 17 / 12%);
+	left: 0;
+	margin: 0;
+	max-height: min(16rem, 50vh);
+	overflow: auto;
+	padding: 0.65rem 0.85rem;
+	position: absolute;
+	right: 0;
+	top: 100%;
+	z-index: 20;
+}
+
+.rhd-artny-directory__filter-dropdown-panel[hidden] {
+	display: none;
+}
+
+.rhd-artny-directory__visually-hidden {
+	border: 0;
+	clip: rect(0 0 0 0);
+	height: 1px;
+	margin: -1px;
+	overflow: hidden;
+	padding: 0;
+	position: absolute;
+	white-space: nowrap;
+	width: 1px;
+}
+
+.rhd-artny-directory__fieldset {
+	border: 0;
+	margin: 0;
+	padding: 0;
+	min-width: 0;
+}
+
+.rhd-artny-directory__fieldset-legend {
+	font-weight: 600;
+	margin-bottom: 0.5rem;
+	padding: 0;
+}
+
+.rhd-artny-directory__checkbox-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+}
+
+.rhd-artny-directory__checkbox-item {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.5rem;
+}
+
+.rhd-artny-directory__checkbox {
+	margin-top: 0.2rem;
+	flex-shrink: 0;
+	accent-color: var(--rhd-directory-border);
+}
+
+.rhd-artny-directory__checkbox-label {
+	cursor: pointer;
+	line-height: 1.35;
+}
+
+.rhd-artny-directory__checkbox:focus-visible + .rhd-artny-directory__checkbox-label {
+	outline: 2px solid var(--rhd-directory-border);
+	outline-offset: 2px;
+}
+
+.rhd-artny-directory__filter-actions {
+	display: flex;
+	justify-content: flex-end;
+}
+
+.rhd-artny-directory__clear {
+	appearance: none;
+	border: 1px solid var(--rhd-directory-border);
+	border-radius: 6px;
+	background: transparent;
+	color: var(--rhd-directory-text);
+	cursor: pointer;
+	font: inherit;
+	padding: 0.45rem 0.85rem;
+}
+
+.rhd-artny-directory__clear:hover,
+.rhd-artny-directory__clear:focus-visible {
+	background: var(--rhd-directory-border);
+	color: var(--rhd-directory-surface);
+}
+
+.rhd-artny-directory__status {
+	margin: 0 0 var(--wp--preset--spacing--30, 1rem);
+	font-size: var(--wp--preset--font-size--small, 0.95rem);
+}
+
+.rhd-artny-directory__results-viewport {
+	overflow: hidden;
+	width: 100%;
+}
+
+.rhd-artny-directory__results {
+	--rhd-directory-page-transition-duration: 420ms;
+	--rhd-directory-page-transition-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(min(22rem, 100%), 1fr));
+	gap: var(--wp--preset--spacing--50, 1.5rem);
+	align-items: start;
+	margin-top: 0;
+	width: 100%;
+	transition:
+		transform var(--rhd-directory-page-transition-duration) var(--rhd-directory-page-transition-ease),
+		opacity var(--rhd-directory-page-transition-duration) var(--rhd-directory-page-transition-ease);
+	will-change: transform, opacity;
+}
+
+.rhd-artny-directory__results.is-paginating-out-next {
+	opacity: 0;
+	transform: translateX(-2.75rem);
+}
+
+.rhd-artny-directory__results.is-paginating-out-prev {
+	opacity: 0;
+	transform: translateX(2.75rem);
+}
+
+.rhd-artny-directory__results.is-paginating-in-next {
+	opacity: 0;
+	transform: translateX(2.75rem);
+}
+
+.rhd-artny-directory__results.is-paginating-in-prev {
+	opacity: 0;
+	transform: translateX(-2.75rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.rhd-artny-directory__results {
+		transition: none;
+	}
+}
+
+.rhd-artny-directory__card {
+	box-sizing: border-box;
+	min-width: 0;
+	max-width: 100%;
+	width: 100%;
+	flex: none;
+	overflow-wrap: anywhere;
+}
+
+.rhd-artny-directory__card--hidden,
+.rhd-artny-directory__card[hidden] {
+	display: none !important;
+}
+
+.rhd-artny-directory__empty {
+	margin-top: var(--wp--preset--spacing--40, 1.25rem);
+	text-align: center;
+}
+
+.rhd-artny-directory__pagination {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	gap: var(--wp--preset--spacing--30, 1rem);
+	margin-top: var(--wp--preset--spacing--50, 1.5rem);
+}
+
+.rhd-artny-directory__page-status {
+	margin: 0;
+	font-size: var(--wp--preset--font-size--small, 0.95rem);
+}
+
+.rhd-artny-directory__page-btn {
+	appearance: none;
+	border: 1px solid var(--rhd-directory-border);
+	border-radius: 6px;
+	background: transparent;
+	color: var(--rhd-directory-text);
+	cursor: pointer;
+	font: inherit;
+	padding: 0.45rem 0.85rem;
+}
+
+.rhd-artny-directory__page-btn:hover:not(:disabled),
+.rhd-artny-directory__page-btn:focus-visible:not(:disabled) {
+	background: var(--rhd-directory-border);
+	color: var(--rhd-directory-surface);
+}
+
+.rhd-artny-directory__page-btn:disabled {
+	cursor: not-allowed;
+	opacity: 0.45;
+}
+
+.rhd-artny-directory__card .wp-block-details {
+	font-size: var(--wp--preset--font-size--small, 0.875rem);
+	line-height: 1.5;
+}
+
+.rhd-artny-directory__card .wp-block-details summary {
+	cursor: pointer;
+	font-size: inherit;
+	font-weight: 400;
+	line-height: inherit;
+}
+
+.rhd-artny-directory__card .wp-block-details p {
+	font-size: inherit;
+	line-height: inherit;
+	margin-block: 0.5rem 0;
+}
+
+.rhd-artny-directory__card .wp-block-social-links {
+	display: flex;
+	justify-content: center;
+	margin-top: var(--wp--preset--spacing--30, 1rem);
+	width: 100%;
+}
+
+.rhd-artny-directory-editor {
+	min-height: 8rem;
+}
+
+@media (min-width: 782px) {
+	.rhd-artny-directory__filters-form {
+		grid-template-columns: minmax(0, 1.4fr) minmax(0, 2fr);
+		align-items: end;
+	}
+
+	.rhd-artny-directory__search-input {
+		max-width: none;
+	}
+
+	.rhd-artny-directory__filter-groups {
+		grid-column: 2;
+	}
+
+	.rhd-artny-directory__filter-actions {
+		grid-column: 1 / -1;
+	}
+}
