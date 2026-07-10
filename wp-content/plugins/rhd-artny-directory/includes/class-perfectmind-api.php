@@ -1,6 +1,6 @@
 <?php
 /**
- * PerfectMind B2C API client for directory Account records.
+ * PerfectMind B2C API client for directory records.
  *
  * @package RHD_Artny_Directory
  */
@@ -10,31 +10,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Fetches Account object records from PerfectMind.
+ * Fetches ObjectRecords from PerfectMind for configured directory types.
  */
 final class RHD_Artny_Directory_Perfectmind_Api {
-
-	/**
-	 * ObjectRecords table name for member organizations.
-	 */
-	const ACCOUNT_TABLE = 'Account';
-
-	/**
-	 * Account fields used by the directory (API source names).
-	 */
-	const ACCOUNT_FIELDS = array(
-		'Name',
-		'Description',
-		'Website',
-		'WebsiteforProfile',
-		'Instagram',
-		'LinkedInProfileURL',
-		'OrganizationFacebookPage',
-		'OrganizationalFocus',
-		'ArtisticFocus',
-		'PublicProgrammingLocations',
-		'AccountType',
-	);
 
 	/**
 	 * Whether API credentials are configured.
@@ -48,11 +26,39 @@ final class RHD_Artny_Directory_Perfectmind_Api {
 	}
 
 	/**
-	 * Fetch all Account records from ObjectRecords.
+	 * Fetch Account records for the organizations directory.
 	 *
 	 * @return array{records: array<int, array<string, mixed>>, error: string}
 	 */
 	public static function fetch_accounts() {
+		return self::fetch_records( RHD_Artny_Directory_Config::TYPE_ORGANIZATIONS );
+	}
+
+	/**
+	 * Fetch Contact records for the individuals directory.
+	 *
+	 * @return array{records: array<int, array<string, mixed>>, error: string}
+	 */
+	public static function fetch_contacts() {
+		return self::fetch_records( RHD_Artny_Directory_Config::TYPE_INDIVIDUALS );
+	}
+
+	/**
+	 * Fetch records for a directory type.
+	 *
+	 * @param string $type organizations|individuals.
+	 * @return array{records: array<int, array<string, mixed>>, error: string}
+	 */
+	public static function fetch_records( $type ) {
+		$config = RHD_Artny_Directory_Config::get( $type );
+
+		if ( null === $config ) {
+			return array(
+				'records' => array(),
+				'error'   => __( 'Unknown directory type.', 'rhd-artny-directory' ),
+			);
+		}
+
 		if ( ! self::is_configured() ) {
 			return array(
 				'records' => array(),
@@ -63,13 +69,13 @@ final class RHD_Artny_Directory_Perfectmind_Api {
 		$url = trailingslashit( self::base_url() ) . 'api/2.0/B2C/ObjectRecords';
 
 		$response = wp_remote_get(
-			add_query_arg( 'tableName', self::ACCOUNT_TABLE, $url ),
+			add_query_arg( 'tableName', $config['table'], $url ),
 			array(
 				'timeout' => 90,
 				'headers' => array(
-					'Accept'           => 'application/json',
-					'X-Access-Key'     => self::access_key(),
-					'X-Client-Number'  => self::client_number(),
+					'Accept'          => 'application/json',
+					'X-Access-Key'    => self::access_key(),
+					'X-Client-Number' => self::client_number(),
 				),
 			)
 		);
@@ -105,7 +111,6 @@ final class RHD_Artny_Directory_Perfectmind_Api {
 			);
 		}
 
-		// Some endpoints wrap results; Account returns a bare array.
 		if ( isset( $data['Result'] ) && is_array( $data['Result'] ) ) {
 			$data = $data['Result'];
 		}
@@ -117,16 +122,10 @@ final class RHD_Artny_Directory_Perfectmind_Api {
 				continue;
 			}
 
-			if ( isset( $row['AccountType'] ) && 'Organization' !== (string) $row['AccountType'] ) {
-				continue;
+			$record = self::normalize_row( $type, $row );
+			if ( null !== $record ) {
+				$records[] = $record;
 			}
-
-			$name = isset( $row['Name'] ) ? trim( (string) $row['Name'] ) : '';
-			if ( '' === $name ) {
-				continue;
-			}
-
-			$records[] = self::pick_account_fields( $row );
 		}
 
 		usort(
@@ -143,15 +142,117 @@ final class RHD_Artny_Directory_Perfectmind_Api {
 	}
 
 	/**
-	 * Reduce a raw Account row to directory-relevant fields only.
+	 * Normalize and filter a raw API row for a directory type.
 	 *
-	 * @param array<string, mixed> $row Raw API record.
+	 * @param string               $type Directory type.
+	 * @param array<string, mixed> $row  Raw API record.
+	 * @return array<string, mixed>|null
+	 */
+	private static function normalize_row( $type, $row ) {
+		if ( RHD_Artny_Directory_Config::TYPE_ORGANIZATIONS === $type ) {
+			return self::normalize_account_row( $row );
+		}
+
+		if ( RHD_Artny_Directory_Config::TYPE_INDIVIDUALS === $type ) {
+			return self::normalize_contact_row( $row );
+		}
+
+		return null;
+	}
+
+	/**
+	 * @param array<string, mixed> $row Raw Account row.
+	 * @return array<string, mixed>|null
+	 */
+	private static function normalize_account_row( $row ) {
+		if ( isset( $row['AccountType'] ) && 'Organization' !== (string) $row['AccountType'] ) {
+			return null;
+		}
+
+		$name = isset( $row['Name'] ) ? trim( (string) $row['Name'] ) : '';
+		if ( '' === $name ) {
+			return null;
+		}
+
+		return self::pick_fields(
+			$row,
+			array(
+				'Name',
+				'Description',
+				'Website',
+				'WebsiteforProfile',
+				'Instagram',
+				'LinkedInProfileURL',
+				'OrganizationFacebookPage',
+				'OrganizationalFocus',
+				'ArtisticFocus',
+				'PublicProgrammingLocations',
+			)
+		);
+	}
+
+	/**
+	 * @param array<string, mixed> $row Raw Contact row.
+	 * @return array<string, mixed>|null
+	 */
+	private static function normalize_contact_row( $row ) {
+		$name = self::build_contact_name( $row );
+		if ( '' === $name ) {
+			return null;
+		}
+
+		$record = self::pick_fields(
+			$row,
+			array(
+				'FirstName',
+				'MiddleName',
+				'LastName',
+				'Description',
+				'PrimaryPractice',
+				'ArtisticPractices',
+				'Website',
+				'IndividualMemberWebsite',
+				'IndividualMemberInstagram',
+				'IndividualMemberFacebook',
+				'IndividualMemberLinkedInProfileURL',
+			)
+		);
+
+		$record['Name'] = $name;
+
+		return $record;
+	}
+
+	/**
+	 * @param array<string, mixed> $row Contact row.
+	 * @return string
+	 */
+	private static function build_contact_name( $row ) {
+		$parts = array();
+
+		foreach ( array( 'FirstName', 'MiddleName', 'LastName' ) as $field ) {
+			if ( empty( $row[ $field ] ) ) {
+				continue;
+			}
+
+			$part = trim( (string) $row[ $field ] );
+			if ( '' !== $part ) {
+				$parts[] = $part;
+			}
+		}
+
+		return implode( ' ', $parts );
+	}
+
+	/**
+	 * @param array<string, mixed> $row    Raw API record.
+	 * @param array<int, string>   $fields Field names to retain.
 	 * @return array<string, mixed>
 	 */
-	private static function pick_account_fields( $row ) {
+	private static function pick_fields( $row, $fields ) {
 		$record = array();
 
-		foreach ( self::ACCOUNT_FIELDS as $field ) {
+		foreach ( $fields as $field ) {
 			if ( array_key_exists( $field, $row ) ) {
 				$record[ $field ] = $row[ $field ];
 			}

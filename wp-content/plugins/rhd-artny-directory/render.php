@@ -13,4 +13,4 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-echo RHD_Artny_Directory_Render::render( $attributes ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+echo RHD_Artny_Directory_Render::render( $attributes, isset( $block->name ) ? $block->name : '' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped

@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: RHD ART/NY Directory
- * Description: Searchable member directory block with filters for Perfectmind/Xplor contacts.
- * Version: 1.0.0
+ * Description: Searchable member directory blocks with filters for Perfectmind/Xplor organizations and individuals.
+ * Version: 1.1.0
  * Author: Roundhouse Designs
  * Text Domain: rhd-artny-directory
  * Requires at least: 6.5
@@ -13,17 +13,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'RHD_ARTNY_DIRECTORY_VERSION', '1.0.0' );
+define( 'RHD_ARTNY_DIRECTORY_VERSION', '1.1.0' );
 define( 'RHD_ARTNY_DIRECTORY_PATH', plugin_dir_path( __FILE__ ) );
 define( 'RHD_ARTNY_DIRECTORY_URL', plugin_dir_url( __FILE__ ) );
 
+require_once RHD_ARTNY_DIRECTORY_PATH . 'includes/class-directory-config.php';
 require_once RHD_ARTNY_DIRECTORY_PATH . 'includes/class-demo-data.php';
 require_once RHD_ARTNY_DIRECTORY_PATH . 'includes/class-perfectmind-api.php';
 require_once RHD_ARTNY_DIRECTORY_PATH . 'includes/class-directory-data.php';
 require_once RHD_ARTNY_DIRECTORY_PATH . 'includes/class-directory-render.php';
 
 /**
- * Bootstrap the contacts directory block.
+ * Bootstrap directory blocks.
  */
 final class RHD_Artny_Directory_Plugin {
 	/**
@@ -50,14 +51,16 @@ final class RHD_Artny_Directory_Plugin {
 	 * Register hooks.
 	 */
 	private function __construct() {
-		add_action( 'init', array( $this, 'register_block' ) );
+		add_action( 'init', array( $this, 'register_blocks' ) );
 		RHD_Artny_Directory_Data::register_hooks();
 	}
 
 	/**
-	 * Register the dynamic block from block.json metadata.
+	 * Register shared editor script.
+	 *
+	 * @return string Script handle.
 	 */
-	public function register_block() {
+	private function register_editor_script() {
 		$editor_script = 'rhd-artny-directory-editor';
 		$editor_path   = RHD_ARTNY_DIRECTORY_PATH . 'assets/editor.js';
 
@@ -75,6 +78,15 @@ final class RHD_Artny_Directory_Plugin {
 			false
 		);
 
+		return $editor_script;
+	}
+
+	/**
+	 * Register directory blocks from block.json metadata.
+	 */
+	public function register_blocks() {
+		$editor_script = $this->register_editor_script();
+
 		register_block_type(
 			RHD_ARTNY_DIRECTORY_PATH,
 			array(
@@ -82,27 +94,10 @@ final class RHD_Artny_Directory_Plugin {
 			)
 		);
 
-		// Back-compat for content saved under the pre-rename block name.
 		register_block_type(
-			'rhd/contacts-directory',
+			RHD_ARTNY_DIRECTORY_PATH . 'blocks/individuals',
 			array(
-				'api_version'     => 3,
-				'title'           => 'ART/NY Directory',
-				'category'        => 'widgets',
-				'icon'            => 'groups',
-				'editor_script'   => $editor_script,
-				'view_script'     => 'rhd-artny-directory-view-script',
-				'style'           => 'rhd-artny-directory-style',
-				'render_callback' => array( 'RHD_Artny_Directory_Render', 'render' ),
-				'attributes'      => array(
-					'align' => array(
-						'type' => 'string',
-					),
-				),
-				'supports'        => array(
-					'html'  => false,
-					'align' => array( 'wide', 'full' ),
-				),
+				'editor_script' => $editor_script,
 			)
 		);
 	}

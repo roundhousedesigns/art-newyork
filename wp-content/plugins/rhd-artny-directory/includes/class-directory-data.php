@@ -1,6 +1,6 @@
 <?php
 /**
- * Cached PerfectMind Account data for the directory block.
+ * Cached PerfectMind data for directory blocks.
  *
  * @package RHD_Artny_Directory
  */
@@ -10,38 +10,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Transforms API records into directory contacts and taxonomy labels.
+ * Transforms API records into directory entries and taxonomy labels.
  */
 final class RHD_Artny_Directory_Data {
 
 	/**
-	 * Transient key for cached directory payload.
+	 * PerfectMind multi-select delimiter.
 	 */
-	const CACHE_KEY = 'rhd_artny_directory_accounts_v4';
-
-	/**
-	 * Account fields retained for display and filtering.
-	 */
-	const CONTACT_FIELDS = array(
-		'Name',
-		'Description',
-		'Website',
-		'Instagram',
-		'OrganizationLinkedInProfile',
-		'OrganizationFacebookPage',
-		'OrganizationalFocus',
-		'ArtisticFocus',
-		'PublicProgrammingLocations',
-	);
-
-	/**
-	 * Multi-select fields stored as slug arrays in the contact shape.
-	 */
-	const TAXONOMY_FIELDS = array(
-		'ArtisticFocus',
-		'OrganizationalFocus',
-		'PublicProgrammingLocations',
-	);
+	const PM_MULTI_VALUE_DELIMITER = '&#g4;&#4g;';
 
 	/**
 	 * Cache lifetime in seconds (12 hours).
@@ -49,34 +25,29 @@ final class RHD_Artny_Directory_Data {
 	const CACHE_TTL = 12 * HOUR_IN_SECONDS;
 
 	/**
-	 * Cron hook for background refresh.
-	 */
-	const CRON_HOOK = 'rhd_artny_directory_sync_accounts';
-
-	/**
-	 * PerfectMind multi-select delimiter in Account fields.
-	 */
-	const PM_MULTI_VALUE_DELIMITER = '&#g4;&#4g;';
-
-	/**
-	 * Register cron and sync hooks.
+	 * Register cron and sync hooks for all directory types.
 	 */
 	public static function register_hooks() {
-		add_action( self::CRON_HOOK, array( __CLASS__, 'refresh_cache' ) );
+		foreach ( RHD_Artny_Directory_Config::all() as $type => $config ) {
+			add_action( $config['cron_hook'], static function () use ( $type ) {
+				self::refresh_cache( $type );
+			} );
 
-		if ( ! wp_next_scheduled( self::CRON_HOOK ) ) {
-			wp_schedule_event( time() + MINUTE_IN_SECONDS, 'twicedaily', self::CRON_HOOK );
+			if ( ! wp_next_scheduled( $config['cron_hook'] ) ) {
+				wp_schedule_event( time() + MINUTE_IN_SECONDS, 'twicedaily', $config['cron_hook'] );
+			}
 		}
 	}
 
 	/**
-	 * Directory contacts for rendering and client-side filtering.
+	 * Directory entries for rendering and client-side filtering.
 	 *
-	 * @param bool $force_refresh Bypass cache when true.
+	 * @param string $type          organizations|individuals.
+	 * @param bool   $force_refresh Bypass cache when true.
 	 * @return array<int, array<string, mixed>>
 	 */
-	public static function get_contacts( $force_refresh = false ) {
-		$payload = self::get_payload( $force_refresh );
+	public static function get_contacts( $type = RHD_Artny_Directory_Config::TYPE_ORGANIZATIONS, $force_refresh = false ) {
+		$payload = self::get_payload( $type, $force_refresh );
 
 		return isset( $payload['contacts'] ) && is_array( $payload['contacts'] )
 			? $payload['contacts']
@@ -86,34 +57,35 @@ final class RHD_Artny_Directory_Data {
 	/**
 	 * Taxonomy labels keyed by slug.
 	 *
-	 * @param bool $force_refresh Bypass cache when true.
+	 * @param string $type          organizations|individuals.
+	 * @param bool   $force_refresh Bypass cache when true.
 	 * @return array<string, array<string, string>>
 	 */
-	public static function get_taxonomy_labels( $force_refresh = false ) {
-		$payload = self::get_payload( $force_refresh );
+	public static function get_taxonomy_labels( $type = RHD_Artny_Directory_Config::TYPE_ORGANIZATIONS, $force_refresh = false ) {
+		$payload = self::get_payload( $type, $force_refresh );
 
 		return isset( $payload['labels'] ) && is_array( $payload['labels'] )
 			? $payload['labels']
-			: self::empty_taxonomy_labels();
+			: self::empty_taxonomy_labels( $type );
 	}
 
 	/**
-	 * Unique taxonomy slugs used across contacts.
+	 * Unique taxonomy slugs used across directory entries.
 	 *
-	 * @param string $taxonomy ArtisticFocus|OrganizationalFocus|PublicProgrammingLocations.
+	 * @param string $taxonomy Taxonomy field key.
+	 * @param string $type     organizations|individuals.
 	 * @param bool   $force_refresh Bypass cache when true.
 	 * @return array<int, string>
 	 */
-	public static function get_used_taxonomy_slugs( $taxonomy, $force_refresh = false ) {
-		$contacts = self::get_contacts( $force_refresh );
+	public static function get_used_taxonomy_slugs( $taxonomy, $type = RHD_Artny_Directory_Config::TYPE_ORGANIZATIONS, $force_refresh = false ) {
+		$config   = self::require_config( $type );
+		$contacts = self::get_contacts( $type, $force_refresh );
 		$slugs    = array();
 
 		foreach ( $contacts as $contact ) {
-			if ( empty( $contact[ $taxonomy ] ) || ! is_array( $contact[ $taxonomy ] ) ) {
-				continue;
-			}
+			$values = self::get_taxonomy_values( $contact, $taxonomy, $config );
 
-			foreach ( $contact[ $taxonomy ] as $slug ) {
+			foreach ( $values as $slug ) {
 				$slugs[ $slug ] = true;
 			}
 		}
@@ -121,16 +93,39 @@ final class RHD_Artny_Directory_Data {
 		$slug_list = array_keys( $slugs );
 		sort( $slug_list, SORT_STRING );
 
+		if ( empty( $slug_list ) ) {
+			$labels = self::get_taxonomy_labels( $type, $force_refresh );
+			if ( ! empty( $labels[ $taxonomy ] ) && is_array( $labels[ $taxonomy ] ) ) {
+				$slug_list = array_keys( $labels[ $taxonomy ] );
+				sort( $slug_list, SORT_STRING );
+			}
+		}
+
 		return $slug_list;
+	}
+
+	/**
+	 * Taxonomy field keys for a directory type.
+	 *
+	 * @param string $type organizations|individuals.
+	 * @return array<int, string>
+	 */
+	public static function get_taxonomy_fields( $type = RHD_Artny_Directory_Config::TYPE_ORGANIZATIONS ) {
+		$config = self::require_config( $type );
+
+		return array_keys( $config['taxonomy_fields'] );
 	}
 
 	/**
 	 * Last sync metadata for debugging/admin surfaces.
 	 *
+	 * @param string $type organizations|individuals.
 	 * @return array<string, mixed>
 	 */
-	public static function get_sync_status() {
-		$payload = get_transient( self::CACHE_KEY );
+	public static function get_sync_status( $type = RHD_Artny_Directory_Config::TYPE_ORGANIZATIONS ) {
+		$config    = self::require_config( $type );
+		$cache_key = $config['cache_key'];
+		$payload   = get_transient( $cache_key );
 
 		if ( ! is_array( $payload ) ) {
 			return array(
@@ -150,75 +145,81 @@ final class RHD_Artny_Directory_Data {
 	}
 
 	/**
-	 * Pull fresh Account data from PerfectMind and store in cache.
+	 * Pull fresh data from PerfectMind and store in cache.
 	 *
+	 * @param string $type organizations|individuals.
 	 * @return array<string, mixed>
 	 */
-	public static function refresh_cache() {
-		$lock_key = self::CACHE_KEY . '_lock';
+	public static function refresh_cache( $type = RHD_Artny_Directory_Config::TYPE_ORGANIZATIONS ) {
+		$config   = self::require_config( $type );
+		$lock_key = $config['cache_key'] . '_lock';
 
 		if ( get_transient( $lock_key ) ) {
-			$cached = get_transient( self::CACHE_KEY );
-			return is_array( $cached ) ? $cached : self::build_fallback_payload( __( 'Sync already in progress.', 'rhd-artny-directory' ) );
+			$cached = get_transient( $config['cache_key'] );
+			return is_array( $cached ) ? $cached : self::build_fallback_payload( $type, __( 'Sync already in progress.', 'rhd-artny-directory' ) );
 		}
 
 		set_transient( $lock_key, 1, 2 * MINUTE_IN_SECONDS );
 
-		$result  = RHD_Artny_Directory_Perfectmind_Api::fetch_accounts();
+		$result  = RHD_Artny_Directory_Perfectmind_Api::fetch_records( $type );
 		$records = $result['records'];
 		$error   = $result['error'];
 
 		if ( empty( $records ) && '' !== $error ) {
-			$cached = get_transient( self::CACHE_KEY );
+			$cached = get_transient( $config['cache_key'] );
 			delete_transient( $lock_key );
 
 			if ( is_array( $cached ) && ! empty( $cached['contacts'] ) ) {
 				$cached['error']  = $error;
 				$cached['source'] = 'stale-cache';
-				set_transient( self::CACHE_KEY, $cached, self::CACHE_TTL );
+				set_transient( $config['cache_key'], $cached, self::CACHE_TTL );
 				return $cached;
 			}
 
-			$payload = self::build_fallback_payload( $error );
-			set_transient( self::CACHE_KEY, $payload, 5 * MINUTE_IN_SECONDS );
+			$payload = self::build_fallback_payload( $type, $error );
+			set_transient( $config['cache_key'], $payload, 5 * MINUTE_IN_SECONDS );
 			return $payload;
 		}
 
-		$payload = self::build_payload_from_records( $records, $error );
-		set_transient( self::CACHE_KEY, $payload, self::CACHE_TTL );
+		$payload = self::build_payload_from_records( $type, $records, $error );
+		set_transient( $config['cache_key'], $payload, self::CACHE_TTL );
 		delete_transient( $lock_key );
 
 		return $payload;
 	}
 
 	/**
-	 * @param bool $force_refresh Bypass cache when true.
+	 * @param string $type          organizations|individuals.
+	 * @param bool   $force_refresh Bypass cache when true.
 	 * @return array<string, mixed>
 	 */
-	private static function get_payload( $force_refresh = false ) {
+	private static function get_payload( $type, $force_refresh = false ) {
 		if ( $force_refresh ) {
-			return self::refresh_cache();
+			return self::refresh_cache( $type );
 		}
 
-		$cached = get_transient( self::CACHE_KEY );
-		if ( is_array( $cached ) && ! empty( $cached['contacts'] ) ) {
+		$config = self::require_config( $type );
+		$cached = get_transient( $config['cache_key'] );
+
+		if ( is_array( $cached ) ) {
 			return $cached;
 		}
 
-		return self::refresh_cache();
+		return self::refresh_cache( $type );
 	}
 
 	/**
-	 * @param array<int, array<string, mixed>> $records Account rows.
-	 * @param string                           $error   Optional API warning.
+	 * @param string                             $type    Directory type.
+	 * @param array<int, array<string, mixed>>   $records API rows.
+	 * @param string                             $error   Optional API warning.
 	 * @return array<string, mixed>
 	 */
-	private static function build_payload_from_records( $records, $error = '' ) {
-		$labels   = self::empty_taxonomy_labels();
+	private static function build_payload_from_records( $type, $records, $error = '' ) {
+		$labels   = self::empty_taxonomy_labels( $type );
 		$contacts = array();
 
 		foreach ( $records as $record ) {
-			$contact = self::transform_record( $record, $labels );
+			$contact = self::transform_record( $type, $record, $labels );
 			if ( null !== $contact ) {
 				$contacts[] = $contact;
 			}
@@ -243,15 +244,16 @@ final class RHD_Artny_Directory_Data {
 	}
 
 	/**
+	 * @param string $type  Directory type.
 	 * @param string $error Error message.
 	 * @return array<string, mixed>
 	 */
-	private static function build_fallback_payload( $error ) {
+	private static function build_fallback_payload( $type, $error ) {
 		if ( RHD_Artny_Directory_Perfectmind_Api::is_configured() ) {
 			return array(
 				'synced_at' => time(),
 				'contacts'  => array(),
-				'labels'    => self::empty_taxonomy_labels(),
+				'labels'    => self::empty_taxonomy_labels( $type ),
 				'error'     => $error,
 				'source'    => 'error',
 			);
@@ -259,30 +261,49 @@ final class RHD_Artny_Directory_Data {
 
 		return array(
 			'synced_at' => time(),
-			'contacts'  => RHD_Artny_Directory_Demo_Data::contacts(),
-			'labels'    => RHD_Artny_Directory_Demo_Data::taxonomy_labels(),
+			'contacts'  => RHD_Artny_Directory_Demo_Data::contacts( $type ),
+			'labels'    => RHD_Artny_Directory_Demo_Data::taxonomy_labels( $type ),
 			'error'     => $error,
 			'source'    => 'demo',
 		);
 	}
 
 	/**
+	 * @param string $type organizations|individuals.
 	 * @return array<string, array<string, string>>
 	 */
-	private static function empty_taxonomy_labels() {
-		return array(
-			'ArtisticFocus'              => array(),
-			'OrganizationalFocus'        => array(),
-			'PublicProgrammingLocations' => array(),
-		);
+	private static function empty_taxonomy_labels( $type ) {
+		$config = self::require_config( $type );
+		$labels = array();
+
+		foreach ( array_keys( $config['taxonomy_fields'] ) as $taxonomy ) {
+			$labels[ $taxonomy ] = array();
+		}
+
+		return $labels;
 	}
 
 	/**
-	 * @param array<string, mixed>               $record Raw Account row.
+	 * @param string                               $type   Directory type.
+	 * @param array<string, mixed>                 $record Raw API row.
 	 * @param array<string, array<string, string>> $labels Taxonomy labels (by reference).
 	 * @return array<string, mixed>|null
 	 */
-	private static function transform_record( $record, &$labels ) {
+	private static function transform_record( $type, $record, &$labels ) {
+		if ( RHD_Artny_Directory_Config::TYPE_INDIVIDUALS === $type ) {
+			return self::transform_individual_record( $record, $labels, self::require_config( $type ) );
+		}
+
+		return self::transform_organization_record( $record, $labels, self::require_config( $type ) );
+	}
+
+	/**
+	 * @param array<string, mixed>                 $record Raw Account row.
+	 * @param array<string, array<string, string>> $labels Taxonomy labels (by reference).
+	 * @param array<string, mixed>                 $config Directory config.
+	 * @return array<string, mixed>|null
+	 */
+	private static function transform_organization_record( $record, &$labels, $config ) {
 		$name = isset( $record['Name'] ) ? sanitize_text_field( (string) $record['Name'] ) : '';
 		if ( '' === $name ) {
 			return null;
@@ -296,45 +317,116 @@ final class RHD_Artny_Directory_Data {
 		}
 
 		$contact = array(
-			'Name'                         => $name,
-			'Description'                  => isset( $record['Description'] ) ? sanitize_textarea_field( (string) $record['Description'] ) : '',
-			'Website'                      => $website,
-			'Instagram'                    => self::normalize_instagram( $record['Instagram'] ?? '' ),
-			'OrganizationLinkedInProfile'  => self::normalize_url( (string) ( $record['OrganizationLinkedInProfile'] ?? $record['LinkedInProfileURL'] ?? '' ) ),
-			'OrganizationFacebookPage'     => self::normalize_url( (string) ( $record['OrganizationFacebookPage'] ?? '' ) ),
-			'ArtisticFocus'                => self::register_taxonomy_values( $labels, 'ArtisticFocus', self::parse_multi_value( $record['ArtisticFocus'] ?? '' ) ),
-			'OrganizationalFocus'          => self::register_taxonomy_values( $labels, 'OrganizationalFocus', self::parse_multi_value( $record['OrganizationalFocus'] ?? '' ) ),
-			'PublicProgrammingLocations'   => self::register_taxonomy_values( $labels, 'PublicProgrammingLocations', self::parse_multi_value( $record['PublicProgrammingLocations'] ?? '' ) ),
+			'Name'                        => $name,
+			'Description'                 => isset( $record['Description'] ) ? sanitize_textarea_field( (string) $record['Description'] ) : '',
+			'Website'                     => $website,
+			'Instagram'                   => self::normalize_instagram( $record['Instagram'] ?? '' ),
+			'OrganizationLinkedInProfile' => self::normalize_url( (string) ( $record['OrganizationLinkedInProfile'] ?? $record['LinkedInProfileURL'] ?? '' ) ),
+			'OrganizationFacebookPage'    => self::normalize_url( (string) ( $record['OrganizationFacebookPage'] ?? '' ) ),
 		);
 
-		return self::contact_is_displayable( $contact ) ? $contact : null;
+		foreach ( $config['taxonomy_fields'] as $taxonomy => $taxonomy_config ) {
+			$contact[ $taxonomy ] = self::register_taxonomy_values(
+				$labels,
+				$taxonomy,
+				self::parse_multi_value( $record[ $taxonomy ] ?? '' ),
+				! empty( $taxonomy_config['multi'] )
+			);
+		}
+
+		return self::contact_is_displayable( $contact, $config ) ? $contact : null;
 	}
 
 	/**
-	 * Whether a contact has the minimum fields required for directory display.
+	 * @param array<string, mixed>                 $record Raw Contact row.
+	 * @param array<string, array<string, string>> $labels Taxonomy labels (by reference).
+	 * @param array<string, mixed>                 $config Directory config.
+	 * @return array<string, mixed>|null
+	 */
+	private static function transform_individual_record( $record, &$labels, $config ) {
+		$name = isset( $record['Name'] ) ? sanitize_text_field( (string) $record['Name'] ) : '';
+		if ( '' === $name ) {
+			return null;
+		}
+
+		$website = '';
+		if ( ! empty( $record['Website'] ) ) {
+			$website = self::normalize_url( (string) $record['Website'] );
+		} elseif ( ! empty( $record['IndividualMemberWebsite'] ) ) {
+			$website = self::normalize_url( (string) $record['IndividualMemberWebsite'] );
+		}
+
+		$contact = array(
+			'Name'        => $name,
+			'Description' => isset( $record['Description'] ) ? sanitize_textarea_field( (string) $record['Description'] ) : '',
+			'Website'     => $website,
+			'Instagram'   => self::normalize_instagram( $record['IndividualMemberInstagram'] ?? '' ),
+			'Facebook'    => self::normalize_url( (string) ( $record['IndividualMemberFacebook'] ?? '' ) ),
+			'LinkedIn'    => self::normalize_url( (string) ( $record['IndividualMemberLinkedInProfileURL'] ?? '' ) ),
+		);
+
+		foreach ( $config['taxonomy_fields'] as $taxonomy => $taxonomy_config ) {
+			$contact[ $taxonomy ] = self::register_taxonomy_values(
+				$labels,
+				$taxonomy,
+				self::parse_multi_value( $record[ $taxonomy ] ?? '' ),
+				! empty( $taxonomy_config['multi'] )
+			);
+		}
+
+		return self::contact_is_displayable( $contact, $config ) ? $contact : null;
+	}
+
+	/**
+	 * Whether an entry has the minimum fields required for directory display.
 	 *
 	 * @param array<string, mixed> $contact Normalized contact record.
+	 * @param array<string, mixed> $config  Directory config.
 	 * @return bool
 	 */
-	private static function contact_is_displayable( $contact ) {
+	private static function contact_is_displayable( $contact, $config ) {
 		$name = isset( $contact['Name'] ) ? trim( (string) $contact['Name'] ) : '';
 		if ( '' === $name ) {
 			return false;
 		}
 
-		$description = isset( $contact['Description'] ) ? trim( (string) $contact['Description'] ) : '';
-		
-		// TODO re-enable Description check when more descriptions are available.
-		// if ( '' === $description ) {
-		// 	return false;
-		// }
+		if ( ! empty( $config['require_description'] ) ) {
+			$description = isset( $contact['Description'] ) ? trim( (string) $contact['Description'] ) : '';
+			if ( '' === $description ) {
+				return false;
+			}
+		}
 
 		$has_web_presence = ! empty( $contact['Website'] )
 			|| ! empty( $contact['Instagram'] )
+			|| ! empty( $contact['Facebook'] )
+			|| ! empty( $contact['LinkedIn'] )
 			|| ! empty( $contact['OrganizationFacebookPage'] )
 			|| ! empty( $contact['OrganizationLinkedInProfile'] );
 
 		return $has_web_presence;
+	}
+
+	/**
+	 * @param array<string, mixed> $contact  Normalized contact.
+	 * @param string               $taxonomy Taxonomy field key.
+	 * @param array<string, mixed> $config   Directory config.
+	 * @return array<int, string>
+	 */
+	private static function get_taxonomy_values( $contact, $taxonomy, $config ) {
+		if ( empty( $contact[ $taxonomy ] ) ) {
+			return array();
+		}
+
+		$taxonomy_config = $config['taxonomy_fields'][ $taxonomy ] ?? array();
+
+		if ( ! empty( $taxonomy_config['multi'] ) ) {
+			return is_array( $contact[ $taxonomy ] ) ? $contact[ $taxonomy ] : array();
+		}
+
+		$slug = is_string( $contact[ $taxonomy ] ) ? $contact[ $taxonomy ] : '';
+
+		return '' !== $slug ? array( $slug ) : array();
 	}
 
 	/**
@@ -371,11 +463,12 @@ final class RHD_Artny_Directory_Data {
 
 	/**
 	 * @param array<string, array<string, string>> $labels   Taxonomy labels (by reference).
-	 * @param string                               $taxonomy ArtisticFocus|OrganizationalFocus|PublicProgrammingLocations.
+	 * @param string                               $taxonomy Taxonomy field key.
 	 * @param array<int, string>                   $values   Human-readable labels.
-	 * @return array<int, string>
+	 * @param bool                                 $multi    Whether multiple values are allowed.
+	 * @return array<int, string>|string
 	 */
-	private static function register_taxonomy_values( &$labels, $taxonomy, $values ) {
+	private static function register_taxonomy_values( &$labels, $taxonomy, $values, $multi = true ) {
 		$slugs = array();
 
 		foreach ( $values as $label ) {
@@ -388,7 +481,11 @@ final class RHD_Artny_Directory_Data {
 			$slugs[]                      = $slug;
 		}
 
-		return $slugs;
+		if ( $multi ) {
+			return $slugs;
+		}
+
+		return isset( $slugs[0] ) ? $slugs[0] : '';
 	}
 
 	/**
@@ -423,5 +520,19 @@ final class RHD_Artny_Directory_Data {
 		}
 
 		return (string) esc_url_raw( $url, array( 'https', 'http' ) );
+	}
+
+	/**
+	 * @param string $type organizations|individuals.
+	 * @return array<string, mixed>
+	 */
+	private static function require_config( $type ) {
+		$config = RHD_Artny_Directory_Config::get( $type );
+
+		if ( null === $config ) {
+			return RHD_Artny_Directory_Config::get( RHD_Artny_Directory_Config::TYPE_ORGANIZATIONS );
+		}
+
+		return $config;
 	}
 }

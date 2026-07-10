@@ -24,10 +24,14 @@ PERFECTMIND_BASE_URL, PERFECTMIND_API_KEY, PERFECTMIND_CLIENT_NUMBER are all def
 
 - Follow the pattern in `wp-content/plugins/rhd-cover-parallax-block` and `wp-content/plugins/rhd-artny-directory`: `block.json` + `render.php`, Roundhouse naming (`rhd-*`), theme-aligned markup using `wp-block-*` classes and `theme.json` CSS variables.
 - **Dynamic blocks must register in the editor client-side (WP 7+).** Server-only `register_block_type()` is not enough — the editor will show “Your site doesn't include support for the block.” Register `assets/editor.js` explicitly in PHP with dependencies: `wp-blocks`, `wp-element`, `wp-block-editor`, `wp-server-side-render`, `wp-components`. Do not rely on `block.json` `"editorScript": "file:./…"` alone; auto-registered editor scripts may load with **empty deps** and fail silently.
-- Use `ServerSideRender` in `edit` for editor preview of dynamic blocks. Guard `registerBlockType` with `getBlockType()` to avoid double registration.
+- **Editor registration:** `unregisterBlockType` then `registerBlockType` when a `block.json` block needs a custom `edit` with `ServerSideRender`. A `getBlockType()` early-return guard alone can leave bootstrapped blocks without a working `edit` callback.
+- **ServerSideRender attributes:** The block-renderer REST endpoint validates attributes with `additionalProperties: false`. Only pass attributes declared in that block’s `block.json` (typically `align` and other registered keys). Do **not** pass full `props.attributes` or client-only keys (e.g. a `directoryType` not in `block.json`) — this yields `Error loading block: Invalid parameter(s): attributes`. Prefer resolving behavior from the registered block name when variants share render code.
+- **Block alignment:** When `supports.align` is enabled, apply alignment only via the block `align` attribute (e.g. `alignwide` / `alignfull` classes from `$attributes['align']`). Do **not** hardcode `alignfull` or `alignwide` on the block wrapper — that overrides the editor control.
+- Use `ServerSideRender` in `edit` for editor preview of dynamic blocks.
 - **Render core block output via `do_blocks()` or `render_block()`** — do not hand-roll markup for blocks that ship icons/assets (e.g. `core/social-links` needs SVG icons from core). Match demo page block attributes (icon colors, layout) when mirroring existing designs.
-- When renaming a plugin: rename folder + main file, update all slugs/classes/text domains/block names, swap `active_plugins` entry, and update `<!-- wp:namespace/block -->` comments in post content. Register a legacy block name if content may still reference the old name.
-- Verify on dev: plugin active, block registered after `init`, page renders expected markup (`docker exec … php -r "require wp-load.php; …"`).
+- **Multiple block variants:** Prefer separate registered block names (e.g. Organizations vs Individuals) with distinct inserter titles. Share PHP/JS/CSS via config — do not register duplicate or legacy block names in the inserter unless content migration requires it; use `supports.inserter: false` or omit legacy registration entirely when backwards compatibility is not needed.
+- When renaming a plugin: rename folder + main file, update all slugs/classes/text domains/block names, swap `active_plugins` entry, and update `<!-- wp:namespace/block -->` comments in post content.
+- Verify on dev: plugin active, block registered after `init`, page renders expected markup (`docker exec … php -r "require wp-load.php; …"`). For editor issues, also verify REST block-renderer accepts the attributes `ServerSideRender` sends.
 
 ## UI details in directory cards
 
@@ -46,3 +50,10 @@ When replacing checkbox groups with compact multi-select filters (directory bloc
 - **Status / empty states:** Result counts and **zero-result messages** must go through an existing `role="status" aria-live="polite"` region. Do not clear the live region and rely on a separate static empty element alone. If a visible empty message remains for sighted users, mark it `aria-hidden="true"` when the live region carries the announcement.
 - **Helper copy:** Associate instructional text with the form via `aria-describedby`.
 - **Verification:** Do not treat accessible UI as complete from markup/implementation alone. Run structured verification (live page DOM, keyboard paths, accessible names) before sign-off; fix Major WCAG gaps (4.1.2 Name/Role/Value, 4.1.3 Status Messages) before claiming AA-ready.
+
+## Directory block data and filters (`rhd-artny-directory`)
+
+- **Config-driven variants:** Use a central config (table, fields, taxonomies, eligibility, block name) for each directory type. Share API, cache, render, and `view.js`; resolve variant from block name in render — avoid duplicating block plugins.
+- **Eligibility vs filter options:** Displayable cards and filter dropdowns are not the same dataset. A sync may have zero displayable contacts (e.g. missing bio/web presence) while taxonomy labels still exist from raw API rows. Populate filter dropdowns from cached taxonomy labels when no displayable contact carries that slug; do not hide filters solely because `contacts` is empty.
+- **Cache:** Use the cached payload when present even if `contacts` is empty, so labels and sync metadata persist between requests.
+- **PerfectMind Contact vs Account:** Individuals use `Contact` (name parts, `Description`, `PrimaryPractice`, `ArtisticPractices`, individual social fields). Organizations use `Account` (`AccountType = Organization`). Keep separate cache keys and cron hooks per type.

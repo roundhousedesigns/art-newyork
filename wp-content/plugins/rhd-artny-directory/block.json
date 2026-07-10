@@ -3,10 +3,10 @@
 	"apiVersion": 3,
 	"name": "rhd/artny-directory",
 	"version": "1.0.0",
-	"title": "ART/NY Directory",
+	"title": "ART/NY Organizations Directory",
 	"category": "widgets",
 	"icon": "groups",
-	"description": "Searchable member directory with filters for Perfectmind/Xplor contacts.",
+	"description": "Searchable member directory with filters for Perfectmind/Xplor organizations.",
 	"keywords": ["directory", "contacts", "perfectmind", "members"],
 	"textdomain": "rhd-artny-directory",
 	"supports": {

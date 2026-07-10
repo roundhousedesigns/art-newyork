@@ -1,6 +1,6 @@
 /* eslint-env browser */
 /**
- * Register the ART/NY Directory block in the block editor (required for WP 7+).
+ * Register ART/NY Directory blocks in the block editor (required for WP 7+).
  */
 ( function ( wp ) {
 	if ( ! wp || ! wp.blocks || ! wp.element || ! wp.blockEditor ) {
@@ -12,55 +12,92 @@
 	var useBlockProps = wp.blockEditor.useBlockProps;
 	var ServerSideRender = wp.serverSideRender;
 
-	var blockSettings = {
-		apiVersion: 3,
-		title: 'ART/NY Directory',
-		category: 'widgets',
-		icon: 'groups',
-		description:
-			'Searchable member directory with filters for Perfectmind/Xplor contacts.',
-		keywords: [ 'directory', 'contacts', 'perfectmind', 'members' ],
-		supports: {
-			html: false,
-			align: [ 'wide', 'full' ],
-		},
-		attributes: {
-			align: {
-				type: 'string',
+	/**
+	 * @param {object} settings
+	 * @returns {object}
+	 */
+	function createBlockSettings( settings ) {
+		return {
+			apiVersion: 3,
+			category: 'widgets',
+			supports: {
+				html: false,
+				align: [ 'wide', 'full' ],
 			},
-		},
-		edit: function ( props ) {
-			var blockProps = useBlockProps();
-			var renderBlock = props.name;
+			attributes: {
+				align: {
+					type: 'string',
+				},
+			},
+			edit: function ( props ) {
+				var blockProps = useBlockProps();
+				var renderAttributes = {};
 
-			return el(
-				'div',
-				blockProps,
-				el( ServerSideRender, {
-					block: renderBlock,
-					attributes: props.attributes,
-					EmptyResponsePlaceholder: function () {
-						return el(
-							'p',
-							null,
-							'ART/NY Directory preview is loading…'
-						);
-					},
-				} )
-			);
-		},
-		save: function () {
-			return null;
-		},
-	};
+				if ( props.attributes.align ) {
+					renderAttributes.align = props.attributes.align;
+				}
 
-	[ 'rhd/artny-directory', 'rhd/contacts-directory' ].forEach( function (
-		blockName
-	) {
-		if ( wp.blocks.getBlockType( blockName ) ) {
-			return;
+				return el(
+					'div',
+					blockProps,
+					el( ServerSideRender, {
+						block: settings.blockName,
+						attributes: renderAttributes,
+						EmptyResponsePlaceholder: function () {
+							return el(
+								'p',
+								null,
+								settings.previewMessage
+							);
+						},
+					} )
+				);
+			},
+			save: function () {
+				return null;
+			},
+		};
+	}
+
+	/**
+	 * @param {object} block
+	 */
+	function registerDirectoryBlock( block ) {
+		if ( wp.blocks.getBlockType( block.blockName ) ) {
+			wp.blocks.unregisterBlockType( block.blockName );
 		}
 
-		registerBlockType( blockName, blockSettings );
-	} );
+		registerBlockType(
+			block.blockName,
+			Object.assign( createBlockSettings( block ), {
+				title: block.title,
+				icon: block.icon,
+				description: block.description,
+				keywords: block.keywords,
+			} )
+		);
+	}
+
+	var blocks = [
+		{
+			blockName: 'rhd/artny-directory',
+			title: 'ART/NY Organizations Directory',
+			icon: 'groups',
+			description:
+				'Searchable member directory with filters for Perfectmind/Xplor organizations.',
+			keywords: [ 'directory', 'organizations', 'perfectmind', 'members' ],
+			previewMessage: 'ART/NY Organizations Directory preview is loading…',
+		},
+		{
+			blockName: 'rhd/artny-individuals-directory',
+			title: 'ART/NY Individuals Directory',
+			icon: 'admin-users',
+			description:
+				'Searchable individuals directory with filters for Perfectmind/Xplor contacts.',
+			keywords: [ 'directory', 'individuals', 'contacts', 'perfectmind' ],
+			previewMessage: 'ART/NY Individuals Directory preview is loading…',
+		},
+	];
+
+	blocks.forEach( registerDirectoryBlock );
 } )( window.wp );

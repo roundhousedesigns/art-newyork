@@ -1,12 +1,35 @@
 /* eslint-env browser */
 /**
- * Client-side filtering and pagination for the ART/NY Directory block.
+ * Client-side filtering and pagination for ART/NY Directory blocks.
  */
 ( function () {
 	'use strict';
 
 	var ROOT_SELECTOR = '[data-rhd-artny-directory]';
 	var DEFAULT_PER_PAGE = 20;
+
+	/**
+	 * @param {HTMLElement} root
+	 * @returns {Array<{filter: string, attr: string, mode: string}>}
+	 */
+	function parseFilterConfig( root ) {
+		var raw = root.getAttribute( 'data-rhd-artny-directory-filters' );
+
+		if ( ! raw ) {
+			return [
+				{ filter: 'artistic_focus', attr: 'artistic-focus', mode: 'multi' },
+				{ filter: 'org_focus', attr: 'org-focus', mode: 'multi' },
+				{ filter: 'location', attr: 'location', mode: 'multi' },
+			];
+		}
+
+		try {
+			var parsed = JSON.parse( raw );
+			return Array.isArray( parsed ) ? parsed : [];
+		} catch ( error ) {
+			return [];
+		}
+	}
 
 	/**
 	 * @param {HTMLElement} root
@@ -17,7 +40,7 @@
 		var clearButton = root.querySelector( '[data-rhd-artny-directory-clear]' );
 		var statusEl = root.querySelector( '[data-rhd-artny-directory-status]' );
 		var emptyEl = root.querySelector( '[data-rhd-artny-directory-empty]' );
-		var emptyMessage = emptyEl ? emptyEl.textContent.trim() : 'No contacts match your filters. Try adjusting your search or clearing filters.';
+		var emptyMessage = emptyEl ? emptyEl.textContent.trim() : 'No results match your filters. Try adjusting your search or clearing filters.';
 		var paginationEl = root.querySelector( '[data-rhd-artny-directory-pagination]' );
 		var pageStatusEl = root.querySelector( '[data-rhd-artny-directory-page-status]' );
 		var prevButton = root.querySelector( '[data-rhd-artny-directory-prev]' );
@@ -29,6 +52,9 @@
 		);
 		var perPage = parseInt( root.getAttribute( 'data-rhd-artny-directory-per-page' ), 10 );
 		var prefersReducedMotion = window.matchMedia( '(prefers-reduced-motion: reduce)' ).matches;
+		var filterConfig = parseFilterConfig( root );
+		var entrySingular = root.getAttribute( 'data-rhd-artny-directory-entry-singular' ) || 'contact';
+		var entryPlural = root.getAttribute( 'data-rhd-artny-directory-entry-plural' ) || 'contacts';
 
 		if ( ! form || ! searchInput || cards.length === 0 ) {
 			return;
@@ -54,14 +80,15 @@
 			var defaultLabel = summaryEl.getAttribute( 'data-default-label' ) || '';
 			var checked = dropdown.querySelectorAll( '[data-rhd-artny-directory-filter]:checked' );
 			var nextText = defaultLabel;
+			var isSingle = dropdown.getAttribute( 'data-rhd-artny-directory-filter-mode' ) === 'single';
 
 			if ( checked.length === 1 ) {
 				nextText = checked[ 0 ].getAttribute( 'data-rhd-artny-directory-filter-label' ) || checked[ 0 ].value;
-			} else if ( checked.length === 2 || checked.length === 3 ) {
+			} else if ( ! isSingle && ( checked.length === 2 || checked.length === 3 ) ) {
 				nextText = Array.prototype.map.call( checked, function ( input ) {
 					return input.getAttribute( 'data-rhd-artny-directory-filter-label' ) || input.value;
 				} ).join( ', ' );
-			} else if ( checked.length > 3 ) {
+			} else if ( ! isSingle && checked.length > 3 ) {
 				nextText = checked.length + ' selected';
 			}
 
@@ -135,9 +162,13 @@
 					trigger.focus();
 				} );
 
-				dropdown.querySelectorAll( '[data-rhd-artny-directory-filter]' ).forEach( function ( checkbox ) {
-					checkbox.addEventListener( 'change', function () {
+				dropdown.querySelectorAll( '[data-rhd-artny-directory-filter]' ).forEach( function ( input ) {
+					input.addEventListener( 'change', function () {
 						updateDropdownSummary( dropdown );
+
+						if ( dropdown.getAttribute( 'data-rhd-artny-directory-filter-mode' ) === 'single' && input.checked ) {
+							setDropdownOpen( dropdown, false );
+						}
 					} );
 				} );
 
@@ -158,8 +189,8 @@
 				}
 
 				var openDropdown = filterDropdowns.find( function ( dropdown ) {
-					var trigger = dropdown.querySelector( '[data-rhd-artny-directory-filter-trigger]' );
-					return trigger && trigger.getAttribute( 'aria-expanded' ) === 'true';
+					var openTrigger = dropdown.querySelector( '[data-rhd-artny-directory-filter-trigger]' );
+					return openTrigger && openTrigger.getAttribute( 'aria-expanded' ) === 'true';
 				} );
 
 				if ( ! openDropdown ) {
@@ -181,42 +212,41 @@
 		var isAnimating = false;
 
 		/**
-		 * @returns {{ q: string, artistic_focus: string[], org_focus: string[], location: string[] }}
+		 * @returns {Record<string, string|string[]>}
 		 */
 		function readFilters() {
-			var artistic = [];
-			var org = [];
-			var location = [];
-
-			form.querySelectorAll( '[data-rhd-artny-directory-filter="artistic_focus"]:checked' ).forEach( function ( el ) {
-				artistic.push( el.value );
-			} );
-			form.querySelectorAll( '[data-rhd-artny-directory-filter="org_focus"]:checked' ).forEach( function ( el ) {
-				org.push( el.value );
-			} );
-			form.querySelectorAll( '[data-rhd-artny-directory-filter="location"]:checked' ).forEach( function ( el ) {
-				location.push( el.value );
-			} );
-
-			return {
+			var filters = {
 				q: ( searchInput.value || '' ).trim().toLowerCase(),
-				artistic_focus: artistic,
-				org_focus: org,
-				location: location,
 			};
+
+			filterConfig.forEach( function ( config ) {
+				var selected = [];
+				form.querySelectorAll( '[data-rhd-artny-directory-filter="' + config.filter + '"]:checked' ).forEach( function ( el ) {
+					selected.push( el.value );
+				} );
+				filters[ config.filter ] = selected;
+			} );
+
+			return filters;
 		}
 
 		/**
 		 * @param {string} csv
 		 * @param {string[]} selected
+		 * @param {string} mode
 		 * @returns {boolean}
 		 */
-		function matchesTaxonomy( csv, selected ) {
+		function matchesTaxonomy( csv, selected, mode ) {
 			if ( ! selected.length ) {
 				return true;
 			}
 
 			var values = csv ? csv.split( ',' ) : [];
+
+			if ( mode === 'single' ) {
+				return values.indexOf( selected[ 0 ] ) !== -1;
+			}
+
 			return selected.some( function ( slug ) {
 				return values.indexOf( slug ) !== -1;
 			} );
@@ -224,7 +254,7 @@
 
 		/**
 		 * @param {HTMLElement} card
-		 * @param {{ q: string, artistic_focus: string[], org_focus: string[], location: string[] }} filters
+		 * @param {Record<string, string|string[]>} filters
 		 * @returns {boolean}
 		 */
 		function cardMatches( card, filters ) {
@@ -235,16 +265,18 @@
 				}
 			}
 
-			if ( ! matchesTaxonomy( card.getAttribute( 'data-artistic-focus' ) || '', filters.artistic_focus ) ) {
-				return false;
-			}
+			for ( var i = 0; i < filterConfig.length; i += 1 ) {
+				var config = filterConfig[ i ];
+				var selected = filters[ config.filter ];
+				var attrName = 'data-' + config.attr;
 
-			if ( ! matchesTaxonomy( card.getAttribute( 'data-org-focus' ) || '', filters.org_focus ) ) {
-				return false;
-			}
+				if ( ! Array.isArray( selected ) ) {
+					continue;
+				}
 
-			if ( ! matchesTaxonomy( card.getAttribute( 'data-location' ) || '', filters.location ) ) {
-				return false;
+				if ( ! matchesTaxonomy( card.getAttribute( attrName ) || '', selected, config.mode ) ) {
+					return false;
+				}
 			}
 
 			return true;
@@ -310,12 +342,14 @@
 				return;
 			}
 
+			var entryLabel = matchedCount === 1 ? entrySingular : entryPlural;
+
 			if ( totalPages <= 1 ) {
-				statusEl.textContent = 'Showing all ' + matchedCount + ' contact' + ( matchedCount === 1 ? '' : 's' ) + '.';
+				statusEl.textContent = 'Showing all ' + matchedCount + ' ' + entryLabel + '.';
 				return;
 			}
 
-			statusEl.textContent = 'Showing ' + rangeStart + '\u2013' + rangeEnd + ' of ' + matchedCount + ' contacts (page ' + page + ' of ' + totalPages + ').';
+			statusEl.textContent = 'Showing ' + rangeStart + '\u2013' + rangeEnd + ' of ' + matchedCount + ' ' + entryPlural + ' (page ' + page + ' of ' + totalPages + ').';
 		}
 
 		/**
@@ -486,8 +520,8 @@
 		if ( clearButton ) {
 			clearButton.addEventListener( 'click', function () {
 				searchInput.value = '';
-				form.querySelectorAll( 'input[type="checkbox"]' ).forEach( function ( checkbox ) {
-					checkbox.checked = false;
+				form.querySelectorAll( 'input[type="checkbox"], input[type="radio"]' ).forEach( function ( input ) {
+					input.checked = false;
 				} );
 				closeAllDropdowns( null );
 				filterDropdowns.forEach( updateDropdownSummary );
@@ -542,7 +576,7 @@
 				return;
 			}
 
-			var checkbox = form.querySelector( 'input[type="checkbox"][value="' + slug + '"]' );
+			var checkbox = form.querySelector( 'input[type="checkbox"][value="' + slug + '"], input[type="radio"][value="' + slug + '"]' );
 			if ( checkbox ) {
 				checkbox.checked = true;
 				var dropdown = checkbox.closest( '[data-rhd-artny-directory-filter-dropdown]' );
