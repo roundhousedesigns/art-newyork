@@ -708,6 +708,33 @@
 			}
 		} );
 
+		window.addEventListener( 'resize', function () {
+			if ( masonryResizeTimer ) {
+				window.clearTimeout( masonryResizeTimer );
+			}
+			masonryResizeTimer = window.setTimeout( function () {
+				masonryResizeTimer = 0;
+				layoutMasonry();
+			}, 150 );
+		} );
+
+		if ( resultsEl ) {
+			resultsEl.addEventListener(
+				'toggle',
+				function ( event ) {
+					var target = event.target;
+					if ( ! target || target.tagName !== 'DETAILS' ) {
+						return;
+					}
+					if ( ! target.closest( '[data-rhd-artny-directory-card]' ) ) {
+						return;
+					}
+					layoutMasonry();
+				},
+				true
+			);
+		}
+
 		applyFilters( true );
 	}
 
