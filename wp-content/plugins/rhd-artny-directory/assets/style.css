@@ -239,17 +239,38 @@
 .rhd-artny-directory__results {
 	--rhd-directory-page-transition-duration: 420ms;
 	--rhd-directory-page-transition-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+	--rhd-directory-masonry-gap: var(--wp--preset--spacing--50, 1.5rem);
 
-	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(min(22rem, 100%), 1fr));
-	gap: var(--wp--preset--spacing--50, 1.5rem);
-	align-items: start;
+	display: flex;
+	flex-direction: row;
+	align-items: flex-start;
+	gap: var(--rhd-directory-masonry-gap);
 	margin-top: 0;
 	width: 100%;
 	transition:
 		transform var(--rhd-directory-page-transition-duration) var(--rhd-directory-page-transition-ease),
 		opacity var(--rhd-directory-page-transition-duration) var(--rhd-directory-page-transition-ease);
 	will-change: transform, opacity;
+}
+
+.rhd-artny-directory__masonry-column {
+	display: flex;
+	flex: 1 1 0;
+	flex-direction: column;
+	gap: var(--rhd-directory-masonry-gap);
+	min-width: 0;
+}
+
+.rhd-artny-directory__masonry-park {
+	display: none !important;
+}
+
+.rhd-artny-directory__results:not(.is-masonry-ready) {
+	flex-direction: column;
+}
+
+.rhd-artny-directory__results:not(.is-masonry-ready) > .rhd-artny-directory__card {
+	width: 100%;
 }
 
 .rhd-artny-directory__results.is-paginating-out-next {
