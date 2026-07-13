@@ -6,8 +6,8 @@
 	"title": "ART/NY Individuals Directory",
 	"category": "widgets",
 	"icon": "admin-users",
-	"description": "Searchable individuals directory with filters for Perfectmind/Xplor contacts.",
-	"keywords": ["directory", "individuals", "contacts", "perfectmind", "members"],
+	"description": "Searchable individuals directory with filters for Xplor contacts.",
+	"keywords": ["directory", "individuals", "contacts", "xplor", "members"],
 	"textdomain": "rhd-artny-directory",
 	"supports": {
 		"html": false,

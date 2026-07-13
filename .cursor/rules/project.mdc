@@ -9,13 +9,13 @@ alwaysApply: true
 
 This is a WordPress website for the ART/New York organization. The site customizations currently consist of a custom theme, `rhd-art-new-york`.
 
-## Perfectmind integration
-API Documentation for the Perfectmind integration is here: https://drive.google.com/file/d/1X8HgElUwBL-KHQG1eClP919hsWjlWrXx/view
+## Xplor integration
+API Documentation for the Xplor integration is here: https://drive.google.com/file/d/1X8HgElUwBL-KHQG1eClP919hsWjlWrXx/view
 
-## Xplor/PerfectMind API access
+## Xplor API access
 PERFECTMIND_BASE_URL, PERFECTMIND_API_KEY, PERFECTMIND_CLIENT_NUMBER are all defined constants.
 
-- PERFECTMIN_BASE_URL is the remote Xplor/PerfectMind server to query.
+- PERFECTMIN_BASE_URL is the remote Xplor server to query.
 - PERFECTMIND_REST_BASE is the REST endpoint base to query.
 - PERFECTMIND_API_KEY is sent in each REST operation as the X-Access-Key header.
 - PERFECTMIND_CLIENT_NUMBER is sent in each REST operation as the X-Client-Number header.
@@ -56,5 +56,5 @@ When replacing checkbox groups with compact multi-select filters (directory bloc
 - **Config-driven variants:** Use a central config (table, fields, taxonomies, eligibility, block name) for each directory type. Share API, cache, render, and `view.js`; resolve variant from block name in render — avoid duplicating block plugins.
 - **Eligibility vs filter options:** Displayable cards and filter dropdowns are not the same dataset. A sync may have zero displayable contacts (e.g. missing bio/web presence) while taxonomy labels still exist from raw API rows. Populate filter dropdowns from cached taxonomy labels when no displayable contact carries that slug; do not hide filters solely because `contacts` is empty.
 - **Cache:** Use the cached payload when present even if `contacts` is empty, so labels and sync metadata persist between requests.
-- **PerfectMind Contact vs Account:** Individuals use `Contact` (name parts, `Description`, `PrimaryPractice`, `ArtisticPractices`, individual social fields). Organizations use `Account` (`AccountType = Organization`). Keep separate cache keys and cron hooks per type.
+- **Xplor Contact vs Account:** Individuals use `Contact` (name parts, `Description`, `PrimaryPractice`, `ArtisticPractices`, individual social fields). Organizations use `Account` (`AccountType = Organization`). Keep separate cache keys and cron hooks per type.
 - **Membership expiry:** Exclude expired entries from directory cards. Individuals: skip when `MembershipExpiry` is before today (null/empty = active). Organizations: resolve `PrimaryContact` to a Contact `ID` and apply that contact's `MembershipExpiry`; exclude orgs with no primary contact or expired primary contact. Bump cache keys when eligibility rules change.

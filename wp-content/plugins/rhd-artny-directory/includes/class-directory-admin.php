@@ -44,20 +44,20 @@ final class RHD_Artny_Directory_Admin {
 		$wp_admin_bar->add_node(
 			array(
 				'id'    => 'rhd-artny-directory-refresh-data',
-				'title' => esc_html__( 'Refresh PerfectMind Data', 'rhd-artny-directory' ),
+				'title' => esc_html__( 'Refresh Xplor Data', 'rhd-artny-directory' ),
 				'href'  => wp_nonce_url(
 					admin_url( 'admin-post.php?action=' . self::REFRESH_DATA_ACTION ),
 					self::REFRESH_DATA_ACTION
 				),
 				'meta'  => array(
-					'title' => esc_attr__( 'Clear cached directory data and fetch fresh organizations and individuals from PerfectMind.', 'rhd-artny-directory' ),
+					'title' => esc_attr__( 'Clear cached directory data and fetch fresh organizations and individuals from Xplor.', 'rhd-artny-directory' ),
 				),
 			)
 		);
 	}
 
 	/**
-	 * Clear directory cache, refetch from PerfectMind, and redirect back.
+	 * Clear directory cache, refetch from Xplor, and redirect back.
 	 */
 	public static function handle_refresh_data() {
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -103,7 +103,7 @@ final class RHD_Artny_Directory_Admin {
 
 		$message = sprintf(
 			/* translators: 1: organizations count, 2: individuals count */
-			__( 'PerfectMind directory data refreshed. Organizations: %1$d entries. Individuals: %2$d entries.', 'rhd-artny-directory' ),
+			__( 'Xplor directory data refreshed. Organizations: %1$d entries. Individuals: %2$d entries.', 'rhd-artny-directory' ),
 			$org_count,
 			$ind_count
 		);

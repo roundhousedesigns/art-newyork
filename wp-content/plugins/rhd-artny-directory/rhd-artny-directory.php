@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: RHD ART/NY Directory
- * Description: Searchable member directory blocks with filters for Perfectmind/Xplor organizations and individuals.
+ * Description: Searchable member directory blocks with filters for Xplor organizations and individuals.
  * Version: 1.1.0
  * Author: Roundhouse Designs
  * Text Domain: rhd-artny-directory

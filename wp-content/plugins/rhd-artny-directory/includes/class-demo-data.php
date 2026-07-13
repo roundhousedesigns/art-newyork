@@ -29,7 +29,7 @@ final class RHD_Artny_Directory_Demo_Data {
 	}
 
 	/**
-	 * Demo entries using the same field names as live PerfectMind data.
+	 * Demo entries using the same field names as live Xplor data.
 	 *
 	 * @param string $type organizations|individuals.
 	 * @return array<int, array<string, mixed>>

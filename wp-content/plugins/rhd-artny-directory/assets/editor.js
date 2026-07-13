@@ -84,8 +84,8 @@
 			title: 'ART/NY Organizations Directory',
 			icon: 'groups',
 			description:
-				'Searchable member directory with filters for Perfectmind/Xplor organizations.',
-			keywords: [ 'directory', 'organizations', 'perfectmind', 'members' ],
+				'Searchable member directory with filters for Xplor organizations.',
+			keywords: [ 'directory', 'organizations', 'xplor', 'members' ],
 			previewMessage: 'ART/NY Organizations Directory preview is loading…',
 		},
 		{
@@ -93,8 +93,8 @@
 			title: 'ART/NY Individuals Directory',
 			icon: 'admin-users',
 			description:
-				'Searchable individuals directory with filters for Perfectmind/Xplor contacts.',
-			keywords: [ 'directory', 'individuals', 'contacts', 'perfectmind' ],
+				'Searchable individuals directory with filters for Xplor contacts.',
+			keywords: [ 'directory', 'individuals', 'contacts', 'xplor' ],
 			previewMessage: 'ART/NY Individuals Directory preview is loading…',
 		},
 	];

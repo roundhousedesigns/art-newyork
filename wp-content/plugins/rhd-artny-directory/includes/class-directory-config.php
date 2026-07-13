@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class RHD_Artny_Directory_Config {
 
 	/**
-	 * Organization directory (PerfectMind Account table).
+	 * Organization directory (Xplor Account table).
 	 */
 	const TYPE_ORGANIZATIONS = 'organizations';
 
@@ -74,7 +74,7 @@ final class RHD_Artny_Directory_Config {
 			'type'            => self::TYPE_ORGANIZATIONS,
 			'block_name'      => 'rhd/artny-directory',
 			'title'           => __( 'ART/NY Organizations Directory', 'rhd-artny-directory' ),
-			'description'     => __( 'Searchable member directory with filters for Perfectmind/Xplor organizations.', 'rhd-artny-directory' ),
+			'description'     => __( 'Searchable member directory with filters for Xplor organizations.', 'rhd-artny-directory' ),
 			'icon'            => 'groups',
 			'table'           => 'Account',
 			'cache_key'       => 'rhd_artny_directory_accounts_v5',
@@ -139,7 +139,7 @@ final class RHD_Artny_Directory_Config {
 			'type'            => self::TYPE_INDIVIDUALS,
 			'block_name'      => 'rhd/artny-individuals-directory',
 			'title'           => __( 'ART/NY Individuals Directory', 'rhd-artny-directory' ),
-			'description'     => __( 'Searchable individuals directory with filters for Perfectmind/Xplor contacts.', 'rhd-artny-directory' ),
+			'description'     => __( 'Searchable individuals directory with filters for Xplor contacts.', 'rhd-artny-directory' ),
 			'icon'            => 'admin-users',
 			'table'           => 'Contact',
 			'cache_key'       => 'rhd_artny_directory_individuals_v2',

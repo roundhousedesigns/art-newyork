@@ -6,8 +6,8 @@
 	"title": "ART/NY Organizations Directory",
 	"category": "widgets",
 	"icon": "groups",
-	"description": "Searchable member directory with filters for Perfectmind/Xplor organizations.",
-	"keywords": ["directory", "contacts", "perfectmind", "members"],
+	"description": "Searchable member directory with filters for Xplor organizations.",
+	"keywords": ["directory", "contacts", "xplor", "members"],
 	"textdomain": "rhd-artny-directory",
 	"supports": {
 		"html": false,

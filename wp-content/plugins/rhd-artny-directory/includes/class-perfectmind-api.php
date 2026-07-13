@@ -1,6 +1,6 @@
 <?php
 /**
- * PerfectMind B2C API client for directory records.
+ * Xplor B2C API client for directory records.
  *
  * @package RHD_Artny_Directory
  */
@@ -96,7 +96,7 @@ final class RHD_Artny_Directory_Perfectmind_Api {
 		if ( ! self::is_configured() ) {
 			return array(
 				'records' => array(),
-				'error'   => __( 'PerfectMind API credentials are not configured.', 'rhd-artny-directory' ),
+				'error'   => __( 'Xplor API credentials are not configured.', 'rhd-artny-directory' ),
 			);
 		}
 
@@ -145,7 +145,7 @@ final class RHD_Artny_Directory_Perfectmind_Api {
 		if ( ! self::is_configured() ) {
 			return array(
 				'rows'  => array(),
-				'error' => __( 'PerfectMind API credentials are not configured.', 'rhd-artny-directory' ),
+				'error' => __( 'Xplor API credentials are not configured.', 'rhd-artny-directory' ),
 			);
 		}
 
@@ -178,7 +178,7 @@ final class RHD_Artny_Directory_Perfectmind_Api {
 				'rows'  => array(),
 				'error' => sprintf(
 					/* translators: 1: HTTP status code, 2: response body excerpt */
-					__( 'PerfectMind API returned HTTP %1$d: %2$s', 'rhd-artny-directory' ),
+					__( 'Xplor API returned HTTP %1$d: %2$s', 'rhd-artny-directory' ),
 					$status,
 					wp_html_excerpt( $body, 200, '…' )
 				),
@@ -190,7 +190,7 @@ final class RHD_Artny_Directory_Perfectmind_Api {
 		if ( ! is_array( $data ) ) {
 			return array(
 				'rows'  => array(),
-				'error' => __( 'PerfectMind API returned invalid JSON.', 'rhd-artny-directory' ),
+				'error' => __( 'Xplor API returned invalid JSON.', 'rhd-artny-directory' ),
 			);
 		}
 

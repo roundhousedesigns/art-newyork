@@ -1,6 +1,6 @@
 <?php
 /**
- * Cached PerfectMind data for directory blocks.
+ * Cached Xplor data for directory blocks.
  *
  * @package RHD_Artny_Directory
  */
