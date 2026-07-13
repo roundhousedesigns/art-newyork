@@ -77,7 +77,7 @@ final class RHD_Artny_Directory_Config {
 			'description'     => __( 'Searchable member directory with filters for Xplor organizations.', 'rhd-artny-directory' ),
 			'icon'            => 'groups',
 			'table'           => 'Account',
-			'cache_key'       => 'rhd_artny_directory_accounts_v6',
+			'cache_key'       => 'rhd_artny_directory_accounts_v7',
 			'cron_hook'       => 'rhd_artny_directory_sync_accounts',
 			'api_fields'      => array(
 				'Name',
@@ -142,7 +142,7 @@ final class RHD_Artny_Directory_Config {
 			'description'     => __( 'Searchable individuals directory with filters for Xplor contacts.', 'rhd-artny-directory' ),
 			'icon'            => 'admin-users',
 			'table'           => 'Contact',
-			'cache_key'       => 'rhd_artny_directory_individuals_v3',
+			'cache_key'       => 'rhd_artny_directory_individuals_v4',
 			'cron_hook'       => 'rhd_artny_directory_sync_individuals',
 			'api_fields'      => array(
 				'FirstName',
@@ -183,7 +183,7 @@ final class RHD_Artny_Directory_Config {
 			'filter_hint'     => __( 'Filter by name or practice areas', 'rhd-artny-directory' ),
 			'search_placeholder' => __( 'Name or keywords…', 'rhd-artny-directory' ),
 			'empty_message'   => __( 'No individuals match your filters. Try adjusting your search or clearing filters.', 'rhd-artny-directory' ),
-			'require_description' => true,
+			'require_description' => false,
 			'entry_label_singular' => __( 'individual', 'rhd-artny-directory' ),
 			'entry_label_plural'   => __( 'individuals', 'rhd-artny-directory' ),
 		);

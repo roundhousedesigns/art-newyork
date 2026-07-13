@@ -385,7 +385,7 @@ final class RHD_Artny_Directory_Data {
 	 * @return array<string, mixed>|null
 	 */
 	private static function transform_individual_record( $record, &$labels, $config ) {
-		if ( self::is_membership_expired( $record['MembershipExpiry'] ?? null ) ) {
+		if ( self::is_membership_expired( $record['MembershipExpiry'] ?? null, false ) ) {
 			return null;
 		}
 
@@ -457,7 +457,7 @@ final class RHD_Artny_Directory_Data {
 	 * Contact membership expiry map for organization directory sync.
 	 *
 	 * @param string $type organizations|individuals.
-	 * @return array<string, string|null>|null Null when the Contact fetch failed (skip org expiry filtering).
+	 * @return array<string, string|null>|null Null when the Contact fetch failed (exclude organizations).
 	 */
 	private static function get_membership_expiry_map_for_type( $type ) {
 		if ( RHD_Artny_Directory_Config::TYPE_ORGANIZATIONS !== $type ) {
@@ -485,8 +485,8 @@ final class RHD_Artny_Directory_Data {
 	 * @return bool
 	 */
 	private static function organization_membership_is_active( $record, $expiry_map ) {
-		if ( null === $expiry_map ) {
-			return true;
+		if ( ! is_array( $expiry_map ) ) {
+			return false;
 		}
 
 		$primary_contact = isset( $record['PrimaryContact'] ) ? trim( (string) $record['PrimaryContact'] ) : '';
@@ -499,21 +499,44 @@ final class RHD_Artny_Directory_Data {
 	}
 
 	/**
-	 * Whether a MembershipExpiry value is in the past.
-	 *
-	 * Null/empty expiry is treated as active (no expiration date on file).
+	 * Whether a MembershipExpiry value is absent (null, empty, or sentinel).
 	 *
 	 * @param mixed $expiry PerfectMind MembershipExpiry value.
 	 * @return bool
 	 */
-	private static function is_membership_expired( $expiry ) {
+	private static function is_empty_membership_expiry( $expiry ) {
 		if ( null === $expiry || '' === $expiry ) {
-			return false;
+			return true;
 		}
 
 		$timestamp = strtotime( (string) $expiry );
 		if ( false === $timestamp ) {
-			return false;
+			return true;
+		}
+
+		// Xplor may return a .NET min-date sentinel instead of null for "no expiry".
+		return $timestamp <= strtotime( '1900-01-01' );
+	}
+
+	/**
+	 * Whether a MembershipExpiry value is in the past.
+	 *
+	 * Null/empty/sentinel expiry is treated as expired for organizations (primary
+	 * contact lookup). Individuals pass $treat_empty_as_expired false so contacts
+	 * without a date on file are not excluded solely for a missing expiry field.
+	 *
+	 * @param mixed $expiry                    PerfectMind MembershipExpiry value.
+	 * @param bool  $treat_empty_as_expired    When true, null/empty/sentinel counts as expired.
+	 * @return bool
+	 */
+	private static function is_membership_expired( $expiry, $treat_empty_as_expired = true ) {
+		if ( self::is_empty_membership_expiry( $expiry ) ) {
+			return $treat_empty_as_expired;
+		}
+
+		$timestamp = strtotime( (string) $expiry );
+		if ( false === $timestamp ) {
+			return true;
 		}
 
 		$expiry_date = wp_date( 'Y-m-d', $timestamp );
