@@ -343,11 +343,6 @@ final class RHD_Artny_Directory_Render {
 				<?php echo esc_html( $contact['Name'] ); ?>
 			</h3>
 
-			<p class="rhd-artny-directory__membership-expiry is-style-text-annotation has-custom-1-font-size">
-				<?php esc_html_e( 'Membership expires:', 'rhd-artny-directory' ); ?>
-				<?php echo esc_html( RHD_Artny_Directory_Data::format_membership_expiry_display( $contact['MembershipExpiry'] ?? '' ) ); ?>
-			</p>
-
 			<?php if ( ! empty( $contact['Description'] ) ) : ?>
 				<details class="wp-block-details">
 					<summary><?php esc_html_e( 'About', 'rhd-artny-directory' ); ?></summary>

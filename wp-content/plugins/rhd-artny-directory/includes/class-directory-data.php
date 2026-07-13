@@ -469,7 +469,8 @@ final class RHD_Artny_Directory_Data {
 			return $has_web_presence;
 		}
 
-		// Temporary individuals path: ArtistBio/Description optional; PrimaryPractice or web/social is enough.
+		// Temporary individuals path when require_web_presence is false:
+		// PrimaryPractice or web/social is enough (description already checked above when required).
 		$has_primary_practice = ! empty( $contact['PrimaryPractice'] );
 
 		return $has_web_presence || $has_primary_practice;
@@ -565,25 +566,6 @@ final class RHD_Artny_Directory_Data {
 		$today       = wp_date( 'Y-m-d' );
 
 		return $today > $expiry_date;
-	}
-
-	/**
-	 * Human-readable membership expiry for temporary card display.
-	 *
-	 * @param mixed $expiry Raw MembershipExpiry value.
-	 * @return string
-	 */
-	public static function format_membership_expiry_display( $expiry ) {
-		if ( null === $expiry || '' === $expiry ) {
-			return __( 'No expiration date', 'rhd-artny-directory' );
-		}
-
-		$timestamp = strtotime( (string) $expiry );
-		if ( false === $timestamp ) {
-			return sanitize_text_field( (string) $expiry );
-		}
-
-		return wp_date( get_option( 'date_format' ), $timestamp );
 	}
 
 	/**
