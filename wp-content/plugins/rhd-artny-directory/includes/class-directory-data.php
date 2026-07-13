@@ -463,7 +463,16 @@ final class RHD_Artny_Directory_Data {
 			|| ! empty( $contact['OrganizationFacebookPage'] )
 			|| ! empty( $contact['OrganizationLinkedInProfile'] );
 
-		return $has_web_presence;
+		$require_web = ! array_key_exists( 'require_web_presence', $config ) || ! empty( $config['require_web_presence'] );
+
+		if ( $require_web ) {
+			return $has_web_presence;
+		}
+
+		// Temporary individuals path: ArtistBio/Description optional; PrimaryPractice or web/social is enough.
+		$has_primary_practice = ! empty( $contact['PrimaryPractice'] );
+
+		return $has_web_presence || $has_primary_practice;
 	}
 
 	/**

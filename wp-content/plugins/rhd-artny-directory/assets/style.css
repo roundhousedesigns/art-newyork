@@ -306,6 +306,10 @@
 	margin-top: var(--wp--preset--spacing--50, 1.5rem);
 }
 
+.rhd-artny-directory__pagination[hidden] {
+	display: none !important;
+}
+
 .rhd-artny-directory__page-status {
 	margin: 0;
 	font-size: var(--wp--preset--font-size--small, 0.95rem);

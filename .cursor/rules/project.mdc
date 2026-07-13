@@ -37,6 +37,7 @@ PERFECTMIND_BASE_URL, PERFECTMIND_API_KEY, PERFECTMIND_CLIENT_NUMBER are all def
 
 - `<details><summary>` defaults to bold in browsers — set `font-weight: 400` (or `normal`) explicitly when summary should match body text.
 - Scope card typography overrides under plugin classes (e.g. `.rhd-artny-directory__card .wp-block-details`) using theme font-size presets (`--wp--preset--font-size--small`).
+- **`[hidden]` vs CSS `display`:** Any rule that sets `display` (e.g. flex/grid) on a control that toggles the HTML `hidden` attribute must also define the matching `[hidden] { display: none !important; }` (see `.rhd-artny-directory__pagination` and cards). Otherwise Prev/Next (or similar) stays visible on single-page result sets even when JS sets `hidden`.
 
 ## Accessible multi-select filter dropdowns
 
@@ -57,7 +58,12 @@ When replacing checkbox groups with compact multi-select filters (directory bloc
 - **Eligibility vs filter options:** Displayable cards and filter dropdowns are not the same dataset. A sync may have zero displayable contacts (e.g. missing bio/web presence) while taxonomy labels still exist from raw API rows. Populate filter dropdowns from cached taxonomy labels when no displayable contact carries that slug; do not hide filters solely because `contacts` is empty.
 - **Cache:** Use the cached payload when present even if `contacts` is empty, so labels and sync metadata persist between requests. Bump the type’s `cache_key` when transform/eligibility rules change.
 - **Xplor Contact vs Account:** Individuals use `Contact` (name from `FirstName`/`MiddleName`/`LastName`, `PrimaryPractice`, `ArtisticPractices`, individual social fields). Organizations use `Account` (`AccountType = Organization`). Keep separate cache keys and cron hooks per type.
+- **Individuals field roles (do not conflate):**
+  - `ArtistBio` → card About/`Description` content only (map when `Description` empty). Not a display gate unless `require_description` is true.
+  - `PrimaryPractice` → questionnaire-completed signal; used when `require_web_presence` is false as an alternate eligibility path.
+  - Web/social (`IndividualMemberWebsite`, Instagram, Facebook, LinkedIn) → default display gate when `require_web_presence` is true (organizations always require web presence).
+- **Temporary eligibility relaxations:** Prefer explicit config flags (`require_description`, `require_web_presence`) with comments and a cache-key bump—not silent hardcoding. Restore stricter flags when questionnaire completion is healthy.
 - **Individuals bio field:** Questionnaire bios live in `ArtistBio`, not `Description`. Map `ArtistBio` into the card `Description` when `Description` is empty. Include `ArtistBio` (and `Email` when filtering) in Contact field picks.
 - **Individuals test contacts:** Exclude Contact emails whose local part contains `+test` (Xplor questionnaire test accounts). Do not treat repeated names or mismatched websites/bios as a transform bug until raw ObjectRecords rows are checked — CRM test pollution often explains both.
-- **Directory data debugging:** When cards look wrong or too few, compare live DOM → cached payload (`get_contacts` / sync status) → raw `ObjectRecords` rows before changing eligibility. Sparse displayable counts with many active memberships usually mean incomplete questionnaire/web presence, not a render bug.
+- **Directory data debugging:** When cards look wrong or too few, measure the eligibility funnel on raw ObjectRecords (named → not test → not expired → has PrimaryPractice → has ArtistBio → has web) before changing rules. Sparse displayable counts with many active memberships usually mean incomplete questionnaire/web presence, not a render bug.
 - **Membership expiry:** Exclude expired entries from directory cards. Organizations: resolve `PrimaryContact` to a Contact `ID` and apply that contact's `MembershipExpiry`; exclude orgs with no primary contact, missing contact map, or absent/expired primary contact membership (null/empty/sentinel expiry = expired). Individuals: skip when `MembershipExpiry` is explicitly before today; null/empty/sentinel expiry does not alone exclude an individual. Bump cache keys when eligibility rules change.
