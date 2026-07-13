@@ -390,8 +390,12 @@ final class RHD_Artny_Directory_Data {
 		}
 
 		$email = isset( $record['Email'] ) ? strtolower( sanitize_email( (string) $record['Email'] ) ) : '';
-		if ( '' !== $email && false !== strpos( $email, '+test' ) ) {
-			return null;
+		if ( '' !== $email ) {
+			$at_pos     = strpos( $email, '@' );
+			$local_part = false === $at_pos ? $email : substr( $email, 0, $at_pos );
+			if ( false !== strpos( $local_part, '+test' ) ) {
+				return null;
+			}
 		}
 
 		$name = isset( $record['Name'] ) ? sanitize_text_field( (string) $record['Name'] ) : '';
