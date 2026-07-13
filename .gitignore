@@ -17,6 +17,7 @@ node_modules/
 /wp-content/themes/index.php
 /wp-content/upgrade
 /wp-content/upgrade-temp-backup
+/wp-content/wflogs
 /wp-includes/
 /index.php
 /license.txt
