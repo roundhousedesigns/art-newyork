@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Fetches ObjectRecords from PerfectMind for configured directory types.
+ * Fetches ObjectRecords from Xplor for configured directory types.
  */
 final class RHD_Artny_Directory_Perfectmind_Api {
 

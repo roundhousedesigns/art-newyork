@@ -20,7 +20,7 @@ final class RHD_Artny_Directory_Config {
 	const TYPE_ORGANIZATIONS = 'organizations';
 
 	/**
-	 * Individuals directory (PerfectMind Contact table).
+	 * Individuals directory (Xplor Contact table).
 	 */
 	const TYPE_INDIVIDUALS = 'individuals';
 

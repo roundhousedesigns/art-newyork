@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class RHD_Artny_Directory_Data {
 
 	/**
-	 * PerfectMind multi-select delimiter.
+	 * Xplor multi-select delimiter.
 	 */
 	const PM_MULTI_VALUE_DELIMITER = '&#g4;&#4g;';
 
@@ -145,7 +145,7 @@ final class RHD_Artny_Directory_Data {
 	}
 
 	/**
-	 * Pull fresh data from PerfectMind and store in cache.
+	 * Pull fresh data from Xplor and store in cache.
 	 *
 	 * @param string $type organizations|individuals.
 	 * @return array<string, mixed>
@@ -199,7 +199,7 @@ final class RHD_Artny_Directory_Data {
 	}
 
 	/**
-	 * Clear stored directory data and pull fresh payloads from PerfectMind.
+	 * Clear stored directory data and pull fresh payloads from Xplor.
 	 *
 	 * @return array<string, array{count: int, error: string, source: string}>
 	 */
