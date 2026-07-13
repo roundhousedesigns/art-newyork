@@ -363,6 +363,7 @@ final class RHD_Artny_Directory_Data {
 			'Instagram'                   => self::normalize_instagram( $record['Instagram'] ?? '' ),
 			'OrganizationLinkedInProfile' => self::normalize_url( (string) ( $record['OrganizationLinkedInProfile'] ?? $record['LinkedInProfileURL'] ?? '' ) ),
 			'OrganizationFacebookPage'    => self::normalize_url( (string) ( $record['OrganizationFacebookPage'] ?? '' ) ),
+			'MembershipExpiry'            => self::resolve_organization_membership_expiry( $record, $expiry_map ),
 		);
 
 		foreach ( $config['taxonomy_fields'] as $taxonomy => $taxonomy_config ) {
@@ -401,12 +402,13 @@ final class RHD_Artny_Directory_Data {
 		}
 
 		$contact = array(
-			'Name'        => $name,
-			'Description' => isset( $record['Description'] ) ? sanitize_textarea_field( (string) $record['Description'] ) : '',
-			'Website'     => $website,
-			'Instagram'   => self::normalize_instagram( $record['IndividualMemberInstagram'] ?? '' ),
-			'Facebook'    => self::normalize_url( (string) ( $record['IndividualMemberFacebook'] ?? '' ) ),
-			'LinkedIn'    => self::normalize_url( (string) ( $record['IndividualMemberLinkedInProfileURL'] ?? '' ) ),
+			'Name'             => $name,
+			'Description'      => isset( $record['Description'] ) ? sanitize_textarea_field( (string) $record['Description'] ) : '',
+			'Website'          => $website,
+			'Instagram'        => self::normalize_instagram( $record['IndividualMemberInstagram'] ?? '' ),
+			'Facebook'         => self::normalize_url( (string) ( $record['IndividualMemberFacebook'] ?? '' ) ),
+			'LinkedIn'         => self::normalize_url( (string) ( $record['IndividualMemberLinkedInProfileURL'] ?? '' ) ),
+			'MembershipExpiry' => self::normalize_membership_expiry_value( $record['MembershipExpiry'] ?? null ),
 		);
 
 		foreach ( $config['taxonomy_fields'] as $taxonomy => $taxonomy_config ) {
@@ -518,6 +520,54 @@ final class RHD_Artny_Directory_Data {
 		$today       = wp_date( 'Y-m-d' );
 
 		return $today > $expiry_date;
+	}
+
+	/**
+	 * Human-readable membership expiry for temporary card display.
+	 *
+	 * @param mixed $expiry Raw MembershipExpiry value.
+	 * @return string
+	 */
+	public static function format_membership_expiry_display( $expiry ) {
+		if ( null === $expiry || '' === $expiry ) {
+			return __( 'No expiration date', 'rhd-artny-directory' );
+		}
+
+		$timestamp = strtotime( (string) $expiry );
+		if ( false === $timestamp ) {
+			return sanitize_text_field( (string) $expiry );
+		}
+
+		return wp_date( get_option( 'date_format' ), $timestamp );
+	}
+
+	/**
+	 * @param mixed $expiry Raw MembershipExpiry value.
+	 * @return string
+	 */
+	private static function normalize_membership_expiry_value( $expiry ) {
+		if ( null === $expiry || '' === $expiry ) {
+			return '';
+		}
+
+		return sanitize_text_field( (string) $expiry );
+	}
+
+	/**
+	 * Resolve organization membership expiry from the primary contact.
+	 *
+	 * @param array<string, mixed>                 $record     Raw Account row.
+	 * @param array<string, string|null>|null     $expiry_map Contact ID => MembershipExpiry.
+	 * @return string
+	 */
+	private static function resolve_organization_membership_expiry( $record, $expiry_map ) {
+		$primary_contact = isset( $record['PrimaryContact'] ) ? trim( (string) $record['PrimaryContact'] ) : '';
+
+		if ( '' === $primary_contact || ! is_array( $expiry_map ) || ! array_key_exists( $primary_contact, $expiry_map ) ) {
+			return '';
+		}
+
+		return self::normalize_membership_expiry_value( $expiry_map[ $primary_contact ] );
 	}
 
 	/**
