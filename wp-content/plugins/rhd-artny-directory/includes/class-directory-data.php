@@ -181,7 +181,7 @@ final class RHD_Artny_Directory_Data {
 			return $payload;
 		}
 
-		$payload = self::build_payload_from_records( $type, $records, $error );
+		$payload = self::build_payload_from_records( $type, $records, $error, self::get_membership_expiry_map_for_type( $type ) );
 		set_transient( $config['cache_key'], $payload, self::CACHE_TTL );
 		delete_transient( $lock_key );
 
@@ -209,17 +209,18 @@ final class RHD_Artny_Directory_Data {
 	}
 
 	/**
-	 * @param string                             $type    Directory type.
-	 * @param array<int, array<string, mixed>>   $records API rows.
-	 * @param string                             $error   Optional API warning.
+	 * @param string                             $type       Directory type.
+	 * @param array<int, array<string, mixed>>   $records    API rows.
+	 * @param string                             $error      Optional API warning.
+	 * @param array<string, string|null>|null $expiry_map Contact ID => MembershipExpiry, or null to skip filtering.
 	 * @return array<string, mixed>
 	 */
-	private static function build_payload_from_records( $type, $records, $error = '' ) {
+	private static function build_payload_from_records( $type, $records, $error = '', $expiry_map = null ) {
 		$labels   = self::empty_taxonomy_labels( $type );
 		$contacts = array();
 
 		foreach ( $records as $record ) {
-			$contact = self::transform_record( $type, $record, $labels );
+			$contact = self::transform_record( $type, $record, $labels, $expiry_map );
 			if ( null !== $contact ) {
 				$contacts[] = $contact;
 			}
@@ -284,26 +285,32 @@ final class RHD_Artny_Directory_Data {
 	}
 
 	/**
-	 * @param string                               $type   Directory type.
-	 * @param array<string, mixed>                 $record Raw API row.
-	 * @param array<string, array<string, string>> $labels Taxonomy labels (by reference).
+	 * @param string                               $type       Directory type.
+	 * @param array<string, mixed>                 $record     Raw API row.
+	 * @param array<string, array<string, string>> $labels     Taxonomy labels (by reference).
+	 * @param array<string, string|null>|null     $expiry_map Contact ID => MembershipExpiry, or null to skip filtering.
 	 * @return array<string, mixed>|null
 	 */
-	private static function transform_record( $type, $record, &$labels ) {
+	private static function transform_record( $type, $record, &$labels, $expiry_map = null ) {
 		if ( RHD_Artny_Directory_Config::TYPE_INDIVIDUALS === $type ) {
 			return self::transform_individual_record( $record, $labels, self::require_config( $type ) );
 		}
 
-		return self::transform_organization_record( $record, $labels, self::require_config( $type ) );
+		return self::transform_organization_record( $record, $labels, self::require_config( $type ), $expiry_map );
 	}
 
 	/**
-	 * @param array<string, mixed>                 $record Raw Account row.
-	 * @param array<string, array<string, string>> $labels Taxonomy labels (by reference).
-	 * @param array<string, mixed>                 $config Directory config.
+	 * @param array<string, mixed>                 $record     Raw Account row.
+	 * @param array<string, array<string, string>> $labels     Taxonomy labels (by reference).
+	 * @param array<string, mixed>                 $config     Directory config.
+	 * @param array<string, string|null>|null       $expiry_map Contact ID => MembershipExpiry, or null to skip filtering.
 	 * @return array<string, mixed>|null
 	 */
-	private static function transform_organization_record( $record, &$labels, $config ) {
+	private static function transform_organization_record( $record, &$labels, $config, $expiry_map = null ) {
+		if ( ! self::organization_membership_is_active( $record, $expiry_map ) ) {
+			return null;
+		}
+
 		$name = isset( $record['Name'] ) ? sanitize_text_field( (string) $record['Name'] ) : '';
 		if ( '' === $name ) {
 			return null;
@@ -344,6 +351,10 @@ final class RHD_Artny_Directory_Data {
 	 * @return array<string, mixed>|null
 	 */
 	private static function transform_individual_record( $record, &$labels, $config ) {
+		if ( self::is_membership_expired( $record['MembershipExpiry'] ?? null ) ) {
+			return null;
+		}
+
 		$name = isset( $record['Name'] ) ? sanitize_text_field( (string) $record['Name'] ) : '';
 		if ( '' === $name ) {
 			return null;
@@ -405,6 +416,75 @@ final class RHD_Artny_Directory_Data {
 			|| ! empty( $contact['OrganizationLinkedInProfile'] );
 
 		return $has_web_presence;
+	}
+
+	/**
+	 * Contact membership expiry map for organization directory sync.
+	 *
+	 * @param string $type organizations|individuals.
+	 * @return array<string, string|null>|null Null when the Contact fetch failed (skip org expiry filtering).
+	 */
+	private static function get_membership_expiry_map_for_type( $type ) {
+		if ( RHD_Artny_Directory_Config::TYPE_ORGANIZATIONS !== $type ) {
+			return null;
+		}
+
+		if ( ! RHD_Artny_Directory_Perfectmind_Api::is_configured() ) {
+			return null;
+		}
+
+		$result = RHD_Artny_Directory_Perfectmind_Api::fetch_contact_membership_expiry_map();
+
+		if ( '' !== $result['error'] ) {
+			return null;
+		}
+
+		return $result['map'];
+	}
+
+	/**
+	 * Whether an organization's primary contact has active membership.
+	 *
+	 * @param array<string, mixed>                 $record     Raw Account row.
+	 * @param array<string, string|null>|null     $expiry_map Contact ID => MembershipExpiry.
+	 * @return bool
+	 */
+	private static function organization_membership_is_active( $record, $expiry_map ) {
+		if ( null === $expiry_map ) {
+			return true;
+		}
+
+		$primary_contact = isset( $record['PrimaryContact'] ) ? trim( (string) $record['PrimaryContact'] ) : '';
+
+		if ( '' === $primary_contact || ! array_key_exists( $primary_contact, $expiry_map ) ) {
+			return false;
+		}
+
+		return ! self::is_membership_expired( $expiry_map[ $primary_contact ] );
+	}
+
+	/**
+	 * Whether a MembershipExpiry value is in the past.
+	 *
+	 * Null/empty expiry is treated as active (no expiration date on file).
+	 *
+	 * @param mixed $expiry PerfectMind MembershipExpiry value.
+	 * @return bool
+	 */
+	private static function is_membership_expired( $expiry ) {
+		if ( null === $expiry || '' === $expiry ) {
+			return false;
+		}
+
+		$timestamp = strtotime( (string) $expiry );
+		if ( false === $timestamp ) {
+			return false;
+		}
+
+		$expiry_date = wp_date( 'Y-m-d', $timestamp );
+		$today       = wp_date( 'Y-m-d' );
+
+		return $today > $expiry_date;
 	}
 
 	/**

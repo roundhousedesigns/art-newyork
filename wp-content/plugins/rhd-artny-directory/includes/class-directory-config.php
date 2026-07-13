@@ -77,7 +77,7 @@ final class RHD_Artny_Directory_Config {
 			'description'     => __( 'Searchable member directory with filters for Perfectmind/Xplor organizations.', 'rhd-artny-directory' ),
 			'icon'            => 'groups',
 			'table'           => 'Account',
-			'cache_key'       => 'rhd_artny_directory_accounts_v4',
+			'cache_key'       => 'rhd_artny_directory_accounts_v5',
 			'cron_hook'       => 'rhd_artny_directory_sync_accounts',
 			'api_fields'      => array(
 				'Name',
@@ -91,6 +91,7 @@ final class RHD_Artny_Directory_Config {
 				'ArtisticFocus',
 				'PublicProgrammingLocations',
 				'AccountType',
+				'PrimaryContact',
 			),
 			'taxonomy_fields' => array(
 				'ArtisticFocus'              => array(
@@ -141,7 +142,7 @@ final class RHD_Artny_Directory_Config {
 			'description'     => __( 'Searchable individuals directory with filters for Perfectmind/Xplor contacts.', 'rhd-artny-directory' ),
 			'icon'            => 'admin-users',
 			'table'           => 'Contact',
-			'cache_key'       => 'rhd_artny_directory_individuals_v1',
+			'cache_key'       => 'rhd_artny_directory_individuals_v2',
 			'cron_hook'       => 'rhd_artny_directory_sync_individuals',
 			'api_fields'      => array(
 				'FirstName',
@@ -155,6 +156,7 @@ final class RHD_Artny_Directory_Config {
 				'IndividualMemberInstagram',
 				'IndividualMemberFacebook',
 				'IndividualMemberLinkedInProfileURL',
+				'MembershipExpiry',
 			),
 			'taxonomy_fields' => array(
 				'PrimaryPractice'   => array(

@@ -44,6 +44,40 @@ final class RHD_Artny_Directory_Perfectmind_Api {
 	}
 
 	/**
+	 * Contact ID => MembershipExpiry for organization membership checks.
+	 *
+	 * @return array{map: array<string, string|null>, error: string}
+	 */
+	public static function fetch_contact_membership_expiry_map() {
+		$result = self::fetch_table_rows( 'Contact' );
+
+		if ( '' !== $result['error'] ) {
+			return array(
+				'map'   => array(),
+				'error' => $result['error'],
+			);
+		}
+
+		$map = array();
+
+		foreach ( $result['rows'] as $row ) {
+			if ( ! is_array( $row ) || empty( $row['ID'] ) ) {
+				continue;
+			}
+
+			$id = (string) $row['ID'];
+			$map[ $id ] = isset( $row['MembershipExpiry'] ) && null !== $row['MembershipExpiry']
+				? (string) $row['MembershipExpiry']
+				: null;
+		}
+
+		return array(
+			'map'   => $map,
+			'error' => '',
+		);
+	}
+
+	/**
 	 * Fetch records for a directory type.
 	 *
 	 * @param string $type organizations|individuals.
@@ -66,58 +100,18 @@ final class RHD_Artny_Directory_Perfectmind_Api {
 			);
 		}
 
-		$url = trailingslashit( self::base_url() ) . 'api/2.0/B2C/ObjectRecords';
+		$table_result = self::fetch_table_rows( $config['table'] );
 
-		$response = wp_remote_get(
-			add_query_arg( 'tableName', $config['table'], $url ),
-			array(
-				'timeout' => 90,
-				'headers' => array(
-					'Accept'          => 'application/json',
-					'X-Access-Key'    => self::access_key(),
-					'X-Client-Number' => self::client_number(),
-				),
-			)
-		);
-
-		if ( is_wp_error( $response ) ) {
+		if ( '' !== $table_result['error'] ) {
 			return array(
 				'records' => array(),
-				'error'   => $response->get_error_message(),
+				'error'   => $table_result['error'],
 			);
-		}
-
-		$status = (int) wp_remote_retrieve_response_code( $response );
-		$body   = wp_remote_retrieve_body( $response );
-
-		if ( $status < 200 || $status >= 300 ) {
-			return array(
-				'records' => array(),
-				'error'   => sprintf(
-					/* translators: 1: HTTP status code, 2: response body excerpt */
-					__( 'PerfectMind API returned HTTP %1$d: %2$s', 'rhd-artny-directory' ),
-					$status,
-					wp_html_excerpt( $body, 200, '…' )
-				),
-			);
-		}
-
-		$data = json_decode( $body, true );
-
-		if ( ! is_array( $data ) ) {
-			return array(
-				'records' => array(),
-				'error'   => __( 'PerfectMind API returned invalid JSON.', 'rhd-artny-directory' ),
-			);
-		}
-
-		if ( isset( $data['Result'] ) && is_array( $data['Result'] ) ) {
-			$data = $data['Result'];
 		}
 
 		$records = array();
 
-		foreach ( $data as $row ) {
+		foreach ( $table_result['rows'] as $row ) {
 			if ( ! is_array( $row ) ) {
 				continue;
 			}
@@ -138,6 +132,75 @@ final class RHD_Artny_Directory_Perfectmind_Api {
 		return array(
 			'records' => $records,
 			'error'   => '',
+		);
+	}
+
+	/**
+	 * Fetch raw ObjectRecords rows for a table.
+	 *
+	 * @param string $table PerfectMind table name.
+	 * @return array{rows: array<int, array<string, mixed>>, error: string}
+	 */
+	private static function fetch_table_rows( $table ) {
+		if ( ! self::is_configured() ) {
+			return array(
+				'rows'  => array(),
+				'error' => __( 'PerfectMind API credentials are not configured.', 'rhd-artny-directory' ),
+			);
+		}
+
+		$url = trailingslashit( self::base_url() ) . 'api/2.0/B2C/ObjectRecords';
+
+		$response = wp_remote_get(
+			add_query_arg( 'tableName', $table, $url ),
+			array(
+				'timeout' => 90,
+				'headers' => array(
+					'Accept'          => 'application/json',
+					'X-Access-Key'    => self::access_key(),
+					'X-Client-Number' => self::client_number(),
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return array(
+				'rows'  => array(),
+				'error' => $response->get_error_message(),
+			);
+		}
+
+		$status = (int) wp_remote_retrieve_response_code( $response );
+		$body   = wp_remote_retrieve_body( $response );
+
+		if ( $status < 200 || $status >= 300 ) {
+			return array(
+				'rows'  => array(),
+				'error' => sprintf(
+					/* translators: 1: HTTP status code, 2: response body excerpt */
+					__( 'PerfectMind API returned HTTP %1$d: %2$s', 'rhd-artny-directory' ),
+					$status,
+					wp_html_excerpt( $body, 200, '…' )
+				),
+			);
+		}
+
+		$data = json_decode( $body, true );
+
+		if ( ! is_array( $data ) ) {
+			return array(
+				'rows'  => array(),
+				'error' => __( 'PerfectMind API returned invalid JSON.', 'rhd-artny-directory' ),
+			);
+		}
+
+		if ( isset( $data['Result'] ) && is_array( $data['Result'] ) ) {
+			$data = $data['Result'];
+		}
+
+		return array(
+			'rows'  => $data,
+			'error' => '',
 		);
 	}
 
@@ -187,6 +250,7 @@ final class RHD_Artny_Directory_Perfectmind_Api {
 				'OrganizationalFocus',
 				'ArtisticFocus',
 				'PublicProgrammingLocations',
+				'PrimaryContact',
 			)
 		);
 	}
@@ -215,6 +279,7 @@ final class RHD_Artny_Directory_Perfectmind_Api {
 				'IndividualMemberInstagram',
 				'IndividualMemberFacebook',
 				'IndividualMemberLinkedInProfileURL',
+				'MembershipExpiry',
 			)
 		);
 
