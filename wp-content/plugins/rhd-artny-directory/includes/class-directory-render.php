@@ -160,7 +160,6 @@ final class RHD_Artny_Directory_Render {
 									class="rhd-artny-directory__filter-dropdown-trigger"
 									id="<?php echo esc_attr( $trigger_id ); ?>"
 									aria-labelledby="<?php echo esc_attr( $label_id . ' ' . $summary_id ); ?>"
-									aria-haspopup="true"
 									aria-expanded="false"
 									aria-controls="<?php echo esc_attr( $panel_id ); ?>"
 									data-rhd-artny-directory-filter-trigger
