@@ -1,7 +1,7 @@
 # Ignore cursor AI rules
 .cursor/rules/codacy.mdc
 .superpowers/
-./docs/
+docs/
 
 node_modules/
 
