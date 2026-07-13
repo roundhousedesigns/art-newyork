@@ -199,6 +199,29 @@ final class RHD_Artny_Directory_Data {
 	}
 
 	/**
+	 * Clear stored directory data and pull fresh payloads from PerfectMind.
+	 *
+	 * @return array<string, array{count: int, error: string, source: string}>
+	 */
+	public static function refresh_all_caches() {
+		self::clear_cache();
+
+		$results = array();
+
+		foreach ( array_keys( RHD_Artny_Directory_Config::all() ) as $type ) {
+			$payload = self::refresh_cache( $type );
+
+			$results[ $type ] = array(
+				'count'  => isset( $payload['contacts'] ) && is_array( $payload['contacts'] ) ? count( $payload['contacts'] ) : 0,
+				'error'  => isset( $payload['error'] ) ? (string) $payload['error'] : '',
+				'source' => isset( $payload['source'] ) ? (string) $payload['source'] : '',
+			);
+		}
+
+		return $results;
+	}
+
+	/**
 	 * @param string $type          organizations|individuals.
 	 * @param bool   $force_refresh Bypass cache when true.
 	 * @return array<string, mixed>

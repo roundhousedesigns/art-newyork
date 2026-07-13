@@ -10,27 +10,27 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Admin-only cache controls in the WordPress admin bar.
+ * Admin-only data refresh controls in the WordPress admin bar.
  */
 final class RHD_Artny_Directory_Admin {
 
 	/**
-	 * Admin-post action for clearing directory cache.
+	 * Admin-post action for refreshing directory data.
 	 */
-	const CLEAR_CACHE_ACTION = 'rhd_artny_directory_clear_cache';
+	const REFRESH_DATA_ACTION = 'rhd_artny_directory_refresh_data';
 
 	/**
-	 * Transient flag set after a successful cache clear.
+	 * Transient key for refresh results shown after redirect.
 	 */
-	const CACHE_CLEARED_FLAG = 'rhd_artny_directory_cache_cleared';
+	const REFRESH_RESULT_FLAG = 'rhd_artny_directory_refresh_result';
 
 	/**
 	 * Register admin hooks.
 	 */
 	public static function register_hooks() {
 		add_action( 'admin_bar_menu', array( __CLASS__, 'add_admin_bar_link' ), 100 );
-		add_action( 'admin_post_' . self::CLEAR_CACHE_ACTION, array( __CLASS__, 'handle_clear_cache' ) );
-		add_action( 'admin_notices', array( __CLASS__, 'render_cache_cleared_notice' ) );
+		add_action( 'admin_post_' . self::REFRESH_DATA_ACTION, array( __CLASS__, 'handle_refresh_data' ) );
+		add_action( 'admin_notices', array( __CLASS__, 'render_refresh_notice' ) );
 	}
 
 	/**
@@ -43,31 +43,31 @@ final class RHD_Artny_Directory_Admin {
 
 		$wp_admin_bar->add_node(
 			array(
-				'id'    => 'rhd-artny-directory-clear-cache',
-				'title' => esc_html__( 'Clear PerfectMind Cache', 'rhd-artny-directory' ),
+				'id'    => 'rhd-artny-directory-refresh-data',
+				'title' => esc_html__( 'Refresh PerfectMind Data', 'rhd-artny-directory' ),
 				'href'  => wp_nonce_url(
-					admin_url( 'admin-post.php?action=' . self::CLEAR_CACHE_ACTION ),
-					self::CLEAR_CACHE_ACTION
+					admin_url( 'admin-post.php?action=' . self::REFRESH_DATA_ACTION ),
+					self::REFRESH_DATA_ACTION
 				),
 				'meta'  => array(
-					'title' => esc_attr__( 'Clear cached PerfectMind directory data for organizations and individuals.', 'rhd-artny-directory' ),
+					'title' => esc_attr__( 'Clear cached directory data and fetch fresh organizations and individuals from PerfectMind.', 'rhd-artny-directory' ),
 				),
 			)
 		);
 	}
 
 	/**
-	 * Clear directory transients and redirect back.
+	 * Clear directory cache, refetch from PerfectMind, and redirect back.
 	 */
-	public static function handle_clear_cache() {
+	public static function handle_refresh_data() {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to clear the directory cache.', 'rhd-artny-directory' ) );
+			wp_die( esc_html__( 'You do not have permission to refresh directory data.', 'rhd-artny-directory' ) );
 		}
 
-		check_admin_referer( self::CLEAR_CACHE_ACTION );
+		check_admin_referer( self::REFRESH_DATA_ACTION );
 
-		RHD_Artny_Directory_Data::clear_cache();
-		set_transient( self::CACHE_CLEARED_FLAG, 1, MINUTE_IN_SECONDS );
+		$results = RHD_Artny_Directory_Data::refresh_all_caches();
+		set_transient( self::REFRESH_RESULT_FLAG, $results, MINUTE_IN_SECONDS );
 
 		$redirect = wp_get_referer();
 		if ( ! $redirect ) {
@@ -79,18 +79,55 @@ final class RHD_Artny_Directory_Admin {
 	}
 
 	/**
-	 * Confirm cache clear in wp-admin after redirect.
+	 * Confirm data refresh in wp-admin after redirect.
 	 */
-	public static function render_cache_cleared_notice() {
-		if ( ! current_user_can( 'manage_options' ) || ! get_transient( self::CACHE_CLEARED_FLAG ) ) {
+	public static function render_refresh_notice() {
+		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
 
-		delete_transient( self::CACHE_CLEARED_FLAG );
+		$results = get_transient( self::REFRESH_RESULT_FLAG );
+		if ( ! is_array( $results ) ) {
+			return;
+		}
+
+		delete_transient( self::REFRESH_RESULT_FLAG );
+
+		$org_count = isset( $results['organizations']['count'] ) ? (int) $results['organizations']['count'] : 0;
+		$ind_count = isset( $results['individuals']['count'] ) ? (int) $results['individuals']['count'] : 0;
+		$org_error = isset( $results['organizations']['error'] ) ? (string) $results['organizations']['error'] : '';
+		$ind_error = isset( $results['individuals']['error'] ) ? (string) $results['individuals']['error'] : '';
+
+		$has_error = '' !== $org_error || '' !== $ind_error;
+		$notice_class = $has_error ? 'notice-warning' : 'notice-success';
+
+		$message = sprintf(
+			/* translators: 1: organizations count, 2: individuals count */
+			__( 'PerfectMind directory data refreshed. Organizations: %1$d entries. Individuals: %2$d entries.', 'rhd-artny-directory' ),
+			$org_count,
+			$ind_count
+		);
+
+		if ( '' !== $org_error ) {
+			$message .= ' ' . sprintf(
+				/* translators: %s: API error message */
+				__( 'Organizations sync warning: %s', 'rhd-artny-directory' ),
+				$org_error
+			);
+		}
+
+		if ( '' !== $ind_error ) {
+			$message .= ' ' . sprintf(
+				/* translators: %s: API error message */
+				__( 'Individuals sync warning: %s', 'rhd-artny-directory' ),
+				$ind_error
+			);
+		}
 
 		printf(
-			'<div class="notice notice-success is-dismissible"><p>%s</p></div>',
-			esc_html__( 'PerfectMind directory cache cleared. Data will refresh on the next directory request.', 'rhd-artny-directory' )
+			'<div class="notice %1$s is-dismissible"><p>%2$s</p></div>',
+			esc_attr( $notice_class ),
+			esc_html( $message )
 		);
 	}
 }
