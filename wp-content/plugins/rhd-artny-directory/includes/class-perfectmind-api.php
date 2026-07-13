@@ -272,6 +272,8 @@ final class RHD_Artny_Directory_Perfectmind_Api {
 				'MiddleName',
 				'LastName',
 				'Description',
+				'ArtistBio',
+				'Email',
 				'PrimaryPractice',
 				'ArtisticPractices',
 				'Website',

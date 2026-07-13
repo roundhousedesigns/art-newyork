@@ -389,6 +389,11 @@ final class RHD_Artny_Directory_Data {
 			return null;
 		}
 
+		$email = isset( $record['Email'] ) ? strtolower( sanitize_email( (string) $record['Email'] ) ) : '';
+		if ( '' !== $email && false !== strpos( $email, '+test' ) ) {
+			return null;
+		}
+
 		$name = isset( $record['Name'] ) ? sanitize_text_field( (string) $record['Name'] ) : '';
 		if ( '' === $name ) {
 			return null;
@@ -401,9 +406,17 @@ final class RHD_Artny_Directory_Data {
 			$website = self::normalize_url( (string) $record['IndividualMemberWebsite'] );
 		}
 
+		$description = isset( $record['Description'] ) ? sanitize_textarea_field( (string) $record['Description'] ) : '';
+		$artist_bio  = isset( $record['ArtistBio'] ) ? sanitize_textarea_field( (string) $record['ArtistBio'] ) : '';
+
+		// Individuals questionnaire stores bio in ArtistBio; Description is unused.
+		if ( '' === $description && '' !== $artist_bio ) {
+			$description = $artist_bio;
+		}
+
 		$contact = array(
 			'Name'             => $name,
-			'Description'      => isset( $record['Description'] ) ? sanitize_textarea_field( (string) $record['Description'] ) : '',
+			'Description'      => $description,
 			'Website'          => $website,
 			'Instagram'        => self::normalize_instagram( $record['IndividualMemberInstagram'] ?? '' ),
 			'Facebook'         => self::normalize_url( (string) ( $record['IndividualMemberFacebook'] ?? '' ) ),
