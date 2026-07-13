@@ -60,125 +60,125 @@
 			return;
 		}
 
-	if ( ! perPage || perPage < 1 ) {
-		perPage = DEFAULT_PER_PAGE;
-	}
-
-	var MASONRY_GAP_FALLBACK = 24; // px; used only if computed gap fails
-	var masonryResizeTimer = 0;
-	var masonryColumns = [];
-	var masonryPark = null;
-
-	function getMasonryGapPx() {
-		if ( ! resultsEl ) {
-			return MASONRY_GAP_FALLBACK;
+		if ( ! perPage || perPage < 1 ) {
+			perPage = DEFAULT_PER_PAGE;
 		}
-		var styles = window.getComputedStyle( resultsEl );
-		var gap = parseFloat( styles.columnGap || styles.gap );
-		return isNaN( gap ) ? MASONRY_GAP_FALLBACK : gap;
-	}
-
-	function getColumnCount() {
-		if ( window.matchMedia( '(min-width: 1100px)' ).matches ) {
-			return 3;
+	
+		var MASONRY_GAP_FALLBACK = 24; // px; used only if computed gap fails
+		var masonryResizeTimer = 0;
+		var masonryColumns = [];
+		var masonryPark = null;
+	
+		function getMasonryGapPx() {
+			if ( ! resultsEl ) {
+				return MASONRY_GAP_FALLBACK;
+			}
+			var styles = window.getComputedStyle( resultsEl );
+			var gap = parseFloat( styles.columnGap || styles.gap );
+			return isNaN( gap ) ? MASONRY_GAP_FALLBACK : gap;
 		}
-		if ( window.matchMedia( '(min-width: 782px)' ).matches ) {
-			return 2;
+	
+		function getColumnCount() {
+			if ( window.matchMedia( '(min-width: 1100px)' ).matches ) {
+				return 3;
+			}
+			if ( window.matchMedia( '(min-width: 782px)' ).matches ) {
+				return 2;
+			}
+			return 1;
 		}
-		return 1;
-	}
-
-	function ensureMasonryStructure( columnCount ) {
-		if ( ! resultsEl ) {
-			return;
-		}
-
-		if ( ! masonryPark ) {
-			masonryPark = resultsEl.querySelector( '[data-rhd-artny-directory-masonry-park]' );
+	
+		function ensureMasonryStructure( columnCount ) {
+			if ( ! resultsEl ) {
+				return;
+			}
+	
 			if ( ! masonryPark ) {
-				masonryPark = document.createElement( 'div' );
-				masonryPark.className = 'rhd-artny-directory__masonry-park';
-				masonryPark.setAttribute( 'data-rhd-artny-directory-masonry-park', '' );
-				masonryPark.setAttribute( 'hidden', '' );
-				resultsEl.appendChild( masonryPark );
-			}
-		}
-
-		masonryColumns = Array.prototype.slice.call(
-			resultsEl.querySelectorAll( '[data-rhd-artny-directory-masonry-column]' )
-		);
-
-		while ( masonryColumns.length < columnCount ) {
-			var col = document.createElement( 'div' );
-			col.className = 'rhd-artny-directory__masonry-column';
-			col.setAttribute( 'data-rhd-artny-directory-masonry-column', '' );
-			resultsEl.insertBefore( col, masonryPark );
-			masonryColumns.push( col );
-		}
-
-		while ( masonryColumns.length > columnCount ) {
-			var removed = masonryColumns.pop();
-			while ( removed.firstChild ) {
-				masonryPark.appendChild( removed.firstChild );
-			}
-			removed.parentNode.removeChild( removed );
-		}
-
-		masonryColumns = Array.prototype.slice.call(
-			resultsEl.querySelectorAll( '[data-rhd-artny-directory-masonry-column]' )
-		);
-	}
-
-	function isCardVisible( card ) {
-		return ! card.hidden && ! card.classList.contains( 'rhd-artny-directory__card--hidden' );
-	}
-
-	function layoutMasonry() {
-		if ( ! resultsEl || cards.length === 0 ) {
-			return;
-		}
-
-		var columnCount = getColumnCount();
-		ensureMasonryStructure( columnCount );
-
-		var gap = getMasonryGapPx();
-		var heights = [];
-		var i;
-
-		for ( i = 0; i < columnCount; i++ ) {
-			heights[ i ] = 0;
-		}
-
-		// Park every card first so measurements are clean, then place visibles.
-		cards.forEach( function ( card ) {
-			masonryPark.appendChild( card );
-		} );
-
-		var visible = cards.filter( isCardVisible );
-
-		if ( columnCount === 1 ) {
-			visible.forEach( function ( card ) {
-				masonryColumns[ 0 ].appendChild( card );
-			} );
-		} else {
-			visible.forEach( function ( card ) {
-				var shortest = 0;
-				for ( i = 1; i < columnCount; i++ ) {
-					if ( heights[ i ] < heights[ shortest ] ) {
-						shortest = i;
-					}
+				masonryPark = resultsEl.querySelector( '[data-rhd-artny-directory-masonry-park]' );
+				if ( ! masonryPark ) {
+					masonryPark = document.createElement( 'div' );
+					masonryPark.className = 'rhd-artny-directory__masonry-park';
+					masonryPark.setAttribute( 'data-rhd-artny-directory-masonry-park', '' );
+					masonryPark.setAttribute( 'hidden', '' );
+					resultsEl.appendChild( masonryPark );
 				}
-				masonryColumns[ shortest ].appendChild( card );
-				heights[ shortest ] += card.offsetHeight + gap;
-			} );
+			}
+	
+			masonryColumns = Array.prototype.slice.call(
+				resultsEl.querySelectorAll( '[data-rhd-artny-directory-masonry-column]' )
+			);
+	
+			while ( masonryColumns.length < columnCount ) {
+				var col = document.createElement( 'div' );
+				col.className = 'rhd-artny-directory__masonry-column';
+				col.setAttribute( 'data-rhd-artny-directory-masonry-column', '' );
+				resultsEl.insertBefore( col, masonryPark );
+				masonryColumns.push( col );
+			}
+	
+			while ( masonryColumns.length > columnCount ) {
+				var removed = masonryColumns.pop();
+				while ( removed.firstChild ) {
+					masonryPark.appendChild( removed.firstChild );
+				}
+				removed.parentNode.removeChild( removed );
+			}
+	
+			masonryColumns = Array.prototype.slice.call(
+				resultsEl.querySelectorAll( '[data-rhd-artny-directory-masonry-column]' )
+			);
 		}
-
-		resultsEl.classList.add( 'is-masonry-ready' );
-	}
-
-	var filterDropdowns = Array.prototype.slice.call(
-		form.querySelectorAll( '[data-rhd-artny-directory-filter-dropdown]' )
-	);
+	
+		function isCardVisible( card ) {
+			return ! card.hidden && ! card.classList.contains( 'rhd-artny-directory__card--hidden' );
+		}
+	
+		function layoutMasonry() {
+			if ( ! resultsEl || cards.length === 0 ) {
+				return;
+			}
+	
+			var columnCount = getColumnCount();
+			ensureMasonryStructure( columnCount );
+	
+			var gap = getMasonryGapPx();
+			var heights = [];
+			var i;
+	
+			for ( i = 0; i < columnCount; i++ ) {
+				heights[ i ] = 0;
+			}
+	
+			// Park every card first so measurements are clean, then place visibles.
+			cards.forEach( function ( card ) {
+				masonryPark.appendChild( card );
+			} );
+	
+			var visible = cards.filter( isCardVisible );
+	
+			if ( columnCount === 1 ) {
+				visible.forEach( function ( card ) {
+					masonryColumns[ 0 ].appendChild( card );
+				} );
+			} else {
+				visible.forEach( function ( card ) {
+					var shortest = 0;
+					for ( i = 1; i < columnCount; i++ ) {
+						if ( heights[ i ] < heights[ shortest ] ) {
+							shortest = i;
+						}
+					}
+					masonryColumns[ shortest ].appendChild( card );
+					heights[ shortest ] += card.offsetHeight + gap;
+				} );
+			}
+	
+			resultsEl.classList.add( 'is-masonry-ready' );
+		}
+	
+		var filterDropdowns = Array.prototype.slice.call(
+			form.querySelectorAll( '[data-rhd-artny-directory-filter-dropdown]' )
+		);
 
 		/**
 		 * @param {HTMLElement} dropdown
@@ -506,18 +506,18 @@
 			updateStatus( matchedCount, currentPage, totalPages, rangeStart, rangeEnd );
 			updatePagination( currentPage, totalPages );
 
-		if ( emptyEl ) {
-			emptyEl.hidden = matchedCount > 0;
-		}
-
-		layoutMasonry();
-
-		return {
-			matchedCount: matchedCount,
-			totalPages: totalPages,
-			rangeStart: rangeStart,
-			rangeEnd: rangeEnd,
-		};
+			if ( emptyEl ) {
+				emptyEl.hidden = matchedCount > 0;
+			}
+	
+			layoutMasonry();
+	
+			return {
+				matchedCount: matchedCount,
+				totalPages: totalPages,
+				rangeStart: rangeStart,
+				rangeEnd: rangeEnd,
+			};
 	}
 
 		/**
