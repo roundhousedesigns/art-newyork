@@ -189,6 +189,16 @@ final class RHD_Artny_Directory_Data {
 	}
 
 	/**
+	 * Delete cached directory payloads and sync locks for all directory types.
+	 */
+	public static function clear_cache() {
+		foreach ( RHD_Artny_Directory_Config::all() as $config ) {
+			delete_transient( $config['cache_key'] );
+			delete_transient( $config['cache_key'] . '_lock' );
+		}
+	}
+
+	/**
 	 * @param string $type          organizations|individuals.
 	 * @param bool   $force_refresh Bypass cache when true.
 	 * @return array<string, mixed>

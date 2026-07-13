@@ -22,6 +22,7 @@ require_once RHD_ARTNY_DIRECTORY_PATH . 'includes/class-demo-data.php';
 require_once RHD_ARTNY_DIRECTORY_PATH . 'includes/class-perfectmind-api.php';
 require_once RHD_ARTNY_DIRECTORY_PATH . 'includes/class-directory-data.php';
 require_once RHD_ARTNY_DIRECTORY_PATH . 'includes/class-directory-render.php';
+require_once RHD_ARTNY_DIRECTORY_PATH . 'includes/class-directory-admin.php';
 
 /**
  * Bootstrap directory blocks.
@@ -53,6 +54,7 @@ final class RHD_Artny_Directory_Plugin {
 	private function __construct() {
 		add_action( 'init', array( $this, 'register_blocks' ) );
 		RHD_Artny_Directory_Data::register_hooks();
+		RHD_Artny_Directory_Admin::register_hooks();
 	}
 
 	/**
