@@ -7,7 +7,7 @@ Description: A custom theme for A.R.T./New York by Roundhouse Designs.
 Requires at least: 6.9
 Tested up to: 6.9
 Requires PHP: 7.2
-Version: 1.0
+Version: 1.0.4
 License: GNU General Public License v2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: rhd-art-new-york
@@ -986,4 +986,21 @@ header
   .superblockslider__button__next--icon
   svg {
   display: none;
+}
+
+/*
+ * Cover hero titles: soft translucent scrim (not opaque) for legibility over photos.
+ */
+.wp-block-cover .wp-block-cover__inner-container > .wp-block-group:has(> .wp-block-post-title) {
+  background-color: color-mix(in srgb, var(--wp--preset--color--contrast) 35%, transparent);
+  border-radius: 2px;
+  color: var(--wp--preset--color--base);
+  max-width: max-content;
+  padding: 0.45rem 0.85rem;
+}
+
+.wp-block-cover .wp-block-cover__inner-container > .wp-block-group:has(> .wp-block-post-title) .wp-block-post-title,
+.wp-block-cover .wp-block-cover__inner-container > .wp-block-group:has(> .wp-block-post-title) .wp-block-post-excerpt,
+.wp-block-cover .wp-block-cover__inner-container > .wp-block-group:has(> .wp-block-post-title) .wp-block-post-excerpt__excerpt {
+  color: var(--wp--preset--color--base);
 }
