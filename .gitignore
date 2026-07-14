@@ -54,3 +54,10 @@ wp-config.php
 # Plugin and theme overrides
 !/wp-content/themes/rhd-art-new-york
 !/wp-content/plugins/rhd-artny-directory
+
+# Wordfence
+.user.ini
+wordfence-waf.php
+
+# Yoast SEO
+llms.txt
