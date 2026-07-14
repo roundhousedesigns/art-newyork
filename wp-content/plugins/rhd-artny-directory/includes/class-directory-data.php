@@ -25,6 +25,11 @@ final class RHD_Artny_Directory_Data {
 	const CACHE_TTL = 12 * HOUR_IN_SECONDS;
 
 	/**
+	 * Days after MembershipExpiry that entries remain directory-visible.
+	 */
+	const MEMBERSHIP_EXPIRY_GRACE_DAYS = 60;
+
+	/**
 	 * Register cron and sync hooks for all directory types.
 	 */
 	public static function register_hooks() {
@@ -546,11 +551,13 @@ final class RHD_Artny_Directory_Data {
 	}
 
 	/**
-	 * Whether a MembershipExpiry value is in the past.
+	 * Whether a MembershipExpiry value is past the grace window.
 	 *
-	 * Null/empty/sentinel expiry is treated as expired for organizations (primary
-	 * contact lookup). Individuals pass $treat_empty_as_expired false so contacts
-	 * without a date on file are not excluded solely for a missing expiry field.
+	 * Entries remain visible through MEMBERSHIP_EXPIRY_GRACE_DAYS after the
+	 * expiry date. Null/empty/sentinel expiry is treated as expired for
+	 * organizations (primary contact lookup). Individuals pass
+	 * $treat_empty_as_expired false so contacts without a date on file are not
+	 * excluded solely for a missing expiry field.
 	 *
 	 * @param mixed $expiry                    PerfectMind MembershipExpiry value.
 	 * @param bool  $treat_empty_as_expired    When true, null/empty/sentinel counts as expired.
@@ -566,10 +573,15 @@ final class RHD_Artny_Directory_Data {
 			return true;
 		}
 
-		$expiry_date = wp_date( 'Y-m-d', $timestamp );
-		$today       = wp_date( 'Y-m-d' );
+		$grace_end_timestamp = strtotime( '+' . self::MEMBERSHIP_EXPIRY_GRACE_DAYS . ' days', $timestamp );
+		if ( false === $grace_end_timestamp ) {
+			return true;
+		}
 
-		return $today > $expiry_date;
+		$grace_end_date = wp_date( 'Y-m-d', $grace_end_timestamp );
+		$today          = wp_date( 'Y-m-d' );
+
+		return $today > $grace_end_date;
 	}
 
 	/**
