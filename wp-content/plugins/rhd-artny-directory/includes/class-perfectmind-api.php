@@ -44,11 +44,17 @@ final class RHD_Artny_Directory_Perfectmind_Api {
 	}
 
 	/**
-	 * Contact ID => MembershipExpiry for organization membership checks.
+	 * Contact ID => primary-contact fields used by the organizations directory.
 	 *
-	 * @return array{map: array<string, string|null>, error: string}
+	 * Includes MembershipExpiry (membership gate) and OrganizationBio
+	 * (Account Description fallback when the org row has no bio).
+	 *
+	 * @return array{
+	 *     map: array<string, array{MembershipExpiry: string|null, OrganizationBio: string}>,
+	 *     error: string
+	 * }
 	 */
-	public static function fetch_contact_membership_expiry_map() {
+	public static function fetch_primary_contact_map() {
 		$result = self::fetch_table_rows( 'Contact' );
 
 		if ( '' !== $result['error'] ) {
@@ -66,9 +72,41 @@ final class RHD_Artny_Directory_Perfectmind_Api {
 			}
 
 			$id = (string) $row['ID'];
-			$map[ $id ] = isset( $row['MembershipExpiry'] ) && null !== $row['MembershipExpiry']
-				? (string) $row['MembershipExpiry']
-				: null;
+			$map[ $id ] = array(
+				'MembershipExpiry' => isset( $row['MembershipExpiry'] ) && null !== $row['MembershipExpiry']
+					? (string) $row['MembershipExpiry']
+					: null,
+				'OrganizationBio'  => isset( $row['OrganizationBio'] ) && null !== $row['OrganizationBio']
+					? (string) $row['OrganizationBio']
+					: '',
+			);
+		}
+
+		return array(
+			'map'   => $map,
+			'error' => '',
+		);
+	}
+
+	/**
+	 * @deprecated Use fetch_primary_contact_map().
+	 *
+	 * @return array{map: array<string, string|null>, error: string}
+	 */
+	public static function fetch_contact_membership_expiry_map() {
+		$result = self::fetch_primary_contact_map();
+
+		if ( '' !== $result['error'] ) {
+			return array(
+				'map'   => array(),
+				'error' => $result['error'],
+			);
+		}
+
+		$map = array();
+
+		foreach ( $result['map'] as $id => $contact ) {
+			$map[ $id ] = $contact['MembershipExpiry'];
 		}
 
 		return array(

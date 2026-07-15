@@ -77,7 +77,7 @@ final class RHD_Artny_Directory_Config {
 			'description'     => __( 'Searchable member directory with filters for Xplor organizations.', 'rhd-artny-directory' ),
 			'icon'            => 'groups',
 			'table'           => 'Account',
-			'cache_key'       => 'rhd_artny_directory_accounts_v8',
+			'cache_key'       => 'rhd_artny_directory_accounts_v10',
 			'cron_hook'       => 'rhd_artny_directory_sync_accounts',
 			'api_fields'      => array(
 				'Name',
@@ -124,11 +124,11 @@ final class RHD_Artny_Directory_Config {
 			'filter_heading'  => __( 'Search the directory', 'rhd-artny-directory' ),
 			'filter_hint'     => __( 'Filter by name, focus areas, or location', 'rhd-artny-directory' ),
 			'search_placeholder' => __( 'Name or keywords…', 'rhd-artny-directory' ),
-			'empty_message'   => __( 'No contacts match your filters. Try adjusting your search or clearing filters.', 'rhd-artny-directory' ),
+			'empty_message'   => __( 'No organizations found.', 'rhd-artny-directory' ),
 			'require_description' => false,
 			'require_web_presence' => true,
-			'entry_label_singular' => __( 'contact', 'rhd-artny-directory' ),
-			'entry_label_plural'   => __( 'contacts', 'rhd-artny-directory' ),
+			'entry_label_singular' => __( 'organization', 'rhd-artny-directory' ),
+			'entry_label_plural'   => __( 'organizations', 'rhd-artny-directory' ),
 		);
 	}
 
@@ -185,13 +185,13 @@ final class RHD_Artny_Directory_Config {
 			'filter_heading'  => __( 'Search the directory', 'rhd-artny-directory' ),
 			'filter_hint'     => __( 'Filter by name or practice areas', 'rhd-artny-directory' ),
 			'search_placeholder' => __( 'Name or keywords…', 'rhd-artny-directory' ),
-			'empty_message'   => __( 'No individuals match your filters. Try adjusting your search or clearing filters.', 'rhd-artny-directory' ),
+			'empty_message'   => __( 'No contacts found.', 'rhd-artny-directory' ),
 			// Temporary: ArtistBio/Description not required. Web presence not required alone;
 			// PrimaryPractice and/or web/social qualifies.
 			'require_description'  => false,
 			'require_web_presence' => false,
-			'entry_label_singular' => __( 'individual', 'rhd-artny-directory' ),
-			'entry_label_plural'   => __( 'individuals', 'rhd-artny-directory' ),
+			'entry_label_singular' => __( 'contact', 'rhd-artny-directory' ),
+			'entry_label_plural'   => __( 'contacts', 'rhd-artny-directory' ),
 		);
 	}
 }

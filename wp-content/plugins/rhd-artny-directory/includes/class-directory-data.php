@@ -208,7 +208,7 @@ final class RHD_Artny_Directory_Data {
 			return $payload;
 		}
 
-		$payload = self::build_payload_from_records( $type, $records, $error, self::get_membership_expiry_map_for_type( $type ) );
+		$payload = self::build_payload_from_records( $type, $records, $error, self::get_primary_contact_map_for_type( $type ) );
 		set_transient( $config['cache_key'], $payload, self::CACHE_TTL );
 		delete_transient( $lock_key );
 
@@ -272,15 +272,15 @@ final class RHD_Artny_Directory_Data {
 	 * @param string                             $type       Directory type.
 	 * @param array<int, array<string, mixed>>   $records    API rows.
 	 * @param string                             $error      Optional API warning.
-	 * @param array<string, string|null>|null $expiry_map Contact ID => MembershipExpiry, or null to skip filtering.
+	 * @param array<string, array{MembershipExpiry: string|null, OrganizationBio: string}>|null $primary_contact_map Contact ID => fields, or null to skip org primary-contact enrichment.
 	 * @return array<string, mixed>
 	 */
-	private static function build_payload_from_records( $type, $records, $error = '', $expiry_map = null ) {
+	private static function build_payload_from_records( $type, $records, $error = '', $primary_contact_map = null ) {
 		$labels   = self::empty_taxonomy_labels( $type );
 		$contacts = array();
 
 		foreach ( $records as $record ) {
-			$contact = self::transform_record( $type, $record, $labels, $expiry_map );
+			$contact = self::transform_record( $type, $record, $labels, $primary_contact_map );
 			if ( null !== $contact ) {
 				$contacts[] = $contact;
 			}
@@ -348,26 +348,26 @@ final class RHD_Artny_Directory_Data {
 	 * @param string                               $type       Directory type.
 	 * @param array<string, mixed>                 $record     Raw API row.
 	 * @param array<string, array<string, string>> $labels     Taxonomy labels (by reference).
-	 * @param array<string, string|null>|null     $expiry_map Contact ID => MembershipExpiry, or null to skip filtering.
+	 * @param array<string, array{MembershipExpiry: string|null, OrganizationBio: string}>|null $primary_contact_map Contact ID => fields, or null to skip org primary-contact enrichment.
 	 * @return array<string, mixed>|null
 	 */
-	private static function transform_record( $type, $record, &$labels, $expiry_map = null ) {
+	private static function transform_record( $type, $record, &$labels, $primary_contact_map = null ) {
 		if ( RHD_Artny_Directory_Config::TYPE_INDIVIDUALS === $type ) {
 			return self::transform_individual_record( $record, $labels, self::require_config( $type ) );
 		}
 
-		return self::transform_organization_record( $record, $labels, self::require_config( $type ), $expiry_map );
+		return self::transform_organization_record( $record, $labels, self::require_config( $type ), $primary_contact_map );
 	}
 
 	/**
 	 * @param array<string, mixed>                 $record     Raw Account row.
 	 * @param array<string, array<string, string>> $labels     Taxonomy labels (by reference).
 	 * @param array<string, mixed>                 $config     Directory config.
-	 * @param array<string, string|null>|null       $expiry_map Contact ID => MembershipExpiry, or null to skip filtering.
+	 * @param array<string, array{MembershipExpiry: string|null, OrganizationBio: string}>|null $primary_contact_map Contact ID => fields, or null to skip enrichment.
 	 * @return array<string, mixed>|null
 	 */
-	private static function transform_organization_record( $record, &$labels, $config, $expiry_map = null ) {
-		if ( ! self::organization_membership_is_active( $record, $expiry_map ) ) {
+	private static function transform_organization_record( $record, &$labels, $config, $primary_contact_map = null ) {
+		if ( ! self::organization_membership_is_active( $record, $primary_contact_map ) ) {
 			return null;
 		}
 
@@ -383,14 +383,19 @@ final class RHD_Artny_Directory_Data {
 			$website = self::normalize_url( (string) $record['WebsiteforProfile'] );
 		}
 
+		$organization_bio = self::resolve_organization_bio_from_primary_contact( $record, $primary_contact_map );
+		$description      = '' !== $organization_bio
+			? $organization_bio
+			: ( isset( $record['Description'] ) ? sanitize_textarea_field( (string) $record['Description'] ) : '' );
+
 		$contact = array(
 			'Name'                        => $name,
-			'Description'                 => isset( $record['Description'] ) ? sanitize_textarea_field( (string) $record['Description'] ) : '',
+			'Description'                 => $description,
 			'Website'                     => $website,
 			'Instagram'                   => self::normalize_instagram( $record['Instagram'] ?? '' ),
 			'OrganizationLinkedInProfile' => self::normalize_url( (string) ( $record['OrganizationLinkedInProfile'] ?? $record['LinkedInProfileURL'] ?? '' ) ),
 			'OrganizationFacebookPage'    => self::normalize_url( (string) ( $record['OrganizationFacebookPage'] ?? '' ) ),
-			'MembershipExpiry'            => self::resolve_organization_membership_expiry( $record, $expiry_map ),
+			'MembershipExpiry'            => self::resolve_organization_membership_expiry( $record, $primary_contact_map ),
 		);
 
 		foreach ( $config['taxonomy_fields'] as $taxonomy => $taxonomy_config ) {
@@ -508,12 +513,12 @@ final class RHD_Artny_Directory_Data {
 	}
 
 	/**
-	 * Contact membership expiry map for organization directory sync.
+	 * Primary-contact lookup for organization directory sync.
 	 *
 	 * @param string $type organizations|individuals.
-	 * @return array<string, string|null>|null Null when the Contact fetch failed (exclude organizations).
+	 * @return array<string, array{MembershipExpiry: string|null, OrganizationBio: string}>|null Null when the Contact fetch failed (exclude organizations).
 	 */
-	private static function get_membership_expiry_map_for_type( $type ) {
+	private static function get_primary_contact_map_for_type( $type ) {
 		if ( RHD_Artny_Directory_Config::TYPE_ORGANIZATIONS !== $type ) {
 			return null;
 		}
@@ -522,7 +527,7 @@ final class RHD_Artny_Directory_Data {
 			return null;
 		}
 
-		$result = RHD_Artny_Directory_Perfectmind_Api::fetch_contact_membership_expiry_map();
+		$result = RHD_Artny_Directory_Perfectmind_Api::fetch_primary_contact_map();
 
 		if ( '' !== $result['error'] ) {
 			return null;
@@ -534,22 +539,24 @@ final class RHD_Artny_Directory_Data {
 	/**
 	 * Whether an organization's primary contact has active membership.
 	 *
-	 * @param array<string, mixed>                 $record     Raw Account row.
-	 * @param array<string, string|null>|null     $expiry_map Contact ID => MembershipExpiry.
+	 * @param array<string, mixed> $record              Raw Account row.
+	 * @param array<string, array{MembershipExpiry: string|null, OrganizationBio: string}>|null $primary_contact_map Contact ID => fields.
 	 * @return bool
 	 */
-	private static function organization_membership_is_active( $record, $expiry_map ) {
-		if ( ! is_array( $expiry_map ) ) {
+	private static function organization_membership_is_active( $record, $primary_contact_map ) {
+		if ( ! is_array( $primary_contact_map ) ) {
 			return false;
 		}
 
 		$primary_contact = isset( $record['PrimaryContact'] ) ? trim( (string) $record['PrimaryContact'] ) : '';
 
-		if ( '' === $primary_contact || ! array_key_exists( $primary_contact, $expiry_map ) ) {
+		if ( '' === $primary_contact || ! array_key_exists( $primary_contact, $primary_contact_map ) ) {
 			return false;
 		}
 
-		return ! self::is_membership_expired( $expiry_map[ $primary_contact ] );
+		$expiry = $primary_contact_map[ $primary_contact ]['MembershipExpiry'] ?? null;
+
+		return ! self::is_membership_expired( $expiry );
 	}
 
 	/**
@@ -621,18 +628,40 @@ final class RHD_Artny_Directory_Data {
 	/**
 	 * Resolve organization membership expiry from the primary contact.
 	 *
-	 * @param array<string, mixed>                 $record     Raw Account row.
-	 * @param array<string, string|null>|null     $expiry_map Contact ID => MembershipExpiry.
+	 * @param array<string, mixed> $record              Raw Account row.
+	 * @param array<string, array{MembershipExpiry: string|null, OrganizationBio: string}>|null $primary_contact_map Contact ID => fields.
 	 * @return string
 	 */
-	private static function resolve_organization_membership_expiry( $record, $expiry_map ) {
+	private static function resolve_organization_membership_expiry( $record, $primary_contact_map ) {
 		$primary_contact = isset( $record['PrimaryContact'] ) ? trim( (string) $record['PrimaryContact'] ) : '';
 
-		if ( '' === $primary_contact || ! is_array( $expiry_map ) || ! array_key_exists( $primary_contact, $expiry_map ) ) {
+		if ( '' === $primary_contact || ! is_array( $primary_contact_map ) || ! array_key_exists( $primary_contact, $primary_contact_map ) ) {
 			return '';
 		}
 
-		return self::normalize_membership_expiry_value( $expiry_map[ $primary_contact ] );
+		return self::normalize_membership_expiry_value( $primary_contact_map[ $primary_contact ]['MembershipExpiry'] ?? null );
+	}
+
+	/**
+	 * Resolve OrganizationBio from the organization's primary Contact.
+	 *
+	 * Used when the Account Description field is empty so card About content
+	 * (and require_description eligibility) can use the questionnaire bio.
+	 *
+	 * @param array<string, mixed> $record              Raw Account row.
+	 * @param array<string, array{MembershipExpiry: string|null, OrganizationBio: string}>|null $primary_contact_map Contact ID => fields.
+	 * @return string Sanitized bio, or empty string when unavailable.
+	 */
+	private static function resolve_organization_bio_from_primary_contact( $record, $primary_contact_map ) {
+		$primary_contact = isset( $record['PrimaryContact'] ) ? trim( (string) $record['PrimaryContact'] ) : '';
+
+		if ( '' === $primary_contact || ! is_array( $primary_contact_map ) || ! array_key_exists( $primary_contact, $primary_contact_map ) ) {
+			return '';
+		}
+
+		$bio = $primary_contact_map[ $primary_contact ]['OrganizationBio'] ?? '';
+
+		return sanitize_textarea_field( (string) $bio );
 	}
 
 	/**

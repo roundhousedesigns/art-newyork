@@ -40,7 +40,6 @@
 		var clearButton = root.querySelector( '[data-rhd-artny-directory-clear]' );
 		var statusEl = root.querySelector( '[data-rhd-artny-directory-status]' );
 		var emptyEl = root.querySelector( '[data-rhd-artny-directory-empty]' );
-		var emptyMessage = emptyEl ? emptyEl.textContent.trim() : 'No results match your filters. Try adjusting your search or clearing filters.';
 		var paginationEl = root.querySelector( '[data-rhd-artny-directory-pagination]' );
 		var pageStatusEl = root.querySelector( '[data-rhd-artny-directory-page-status]' );
 		var prevButton = root.querySelector( '[data-rhd-artny-directory-prev]' );
@@ -55,6 +54,7 @@
 		var filterConfig = parseFilterConfig( root );
 		var entrySingular = root.getAttribute( 'data-rhd-artny-directory-entry-singular' ) || 'contact';
 		var entryPlural = root.getAttribute( 'data-rhd-artny-directory-entry-plural' ) || 'contacts';
+		var emptyMessage = emptyEl ? emptyEl.textContent.trim() : ( 'No ' + entryPlural + ' found.' );
 
 		if ( ! form || ! searchInput || cards.length === 0 ) {
 			return;
@@ -457,7 +457,7 @@
 			var entryLabel = matchedCount === 1 ? entrySingular : entryPlural;
 
 			if ( totalPages <= 1 ) {
-				statusEl.textContent = 'Showing all ' + matchedCount + ' ' + entryLabel + '.';
+				statusEl.textContent = 'Showing ' + matchedCount + ' ' + entryLabel + '.';
 				return;
 			}
 

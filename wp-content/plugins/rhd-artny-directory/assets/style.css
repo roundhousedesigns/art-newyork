@@ -25,13 +25,24 @@
 	margin-bottom: var(--wp--preset--spacing--40, 1.25rem);
 }
 
+/*
+ * Search + each filter dropdown share one auto-fit grid so they wrap as peers.
+ * filter-groups uses display:contents so its children participate in this grid
+ * (avoids a nested 2-col layout that bottom-aligned search when filters wrapped).
+ */
 .rhd-artny-directory__filters-form {
-	display: grid;
-	gap: var(--rhd-directory-gap);
-	padding: var(--wp--preset--spacing--40, 1.25rem);
+	align-items: start;
+	background: var(--rhd-directory-surface);
 	border: 1px solid var(--rhd-directory-border);
 	border-radius: 10px;
-	background: var(--rhd-directory-surface);
+	display: grid;
+	gap: var(--rhd-directory-gap);
+	grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr));
+	padding: var(--wp--preset--spacing--40, 1.25rem);
+}
+
+.rhd-artny-directory__search {
+	min-width: 0;
 }
 
 .rhd-artny-directory__search-label {
@@ -43,7 +54,6 @@
 
 .rhd-artny-directory__search-input {
 	width: 100%;
-	max-width: 32rem;
 	padding: 0.65rem 0.85rem;
 	border: 1px solid var(--rhd-directory-border);
 	border-radius: 6px;
@@ -58,9 +68,7 @@
 }
 
 .rhd-artny-directory__filter-groups {
-	display: grid;
-	gap: var(--wp--preset--spacing--30, 1rem);
-	grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr));
+	display: contents;
 }
 
 .rhd-artny-directory__filter-dropdown {
@@ -206,6 +214,7 @@
 
 .rhd-artny-directory__filter-actions {
 	display: flex;
+	grid-column: 1 / -1;
 	justify-content: flex-end;
 }
 
@@ -385,23 +394,4 @@
 
 .rhd-artny-directory-editor {
 	min-height: 8rem;
-}
-
-@media (min-width: 782px) {
-	.rhd-artny-directory__filters-form {
-		grid-template-columns: minmax(0, 1.4fr) minmax(0, 2fr);
-		align-items: end;
-	}
-
-	.rhd-artny-directory__search-input {
-		max-width: none;
-	}
-
-	.rhd-artny-directory__filter-groups {
-		grid-column: 2;
-	}
-
-	.rhd-artny-directory__filter-actions {
-		grid-column: 1 / -1;
-	}
 }
