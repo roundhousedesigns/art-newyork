@@ -25,6 +25,11 @@ final class RHD_Artny_Directory_Data {
 	const CACHE_TTL = 12 * HOUR_IN_SECONDS;
 
 	/**
+	 * WP-Cron recurrence for automatic Xplor sync.
+	 */
+	const CRON_SCHEDULE = 'hourly';
+
+	/**
 	 * Days after MembershipExpiry that entries remain directory-visible.
 	 */
 	const MEMBERSHIP_EXPIRY_GRACE_DAYS = 60;
@@ -38,9 +43,26 @@ final class RHD_Artny_Directory_Data {
 				self::refresh_cache( $type );
 			} );
 
-			if ( ! wp_next_scheduled( $config['cron_hook'] ) ) {
-				wp_schedule_event( time() + MINUTE_IN_SECONDS, 'twicedaily', $config['cron_hook'] );
-			}
+			self::maybe_schedule_sync( $config['cron_hook'] );
+		}
+	}
+
+	/**
+	 * Ensure the directory sync cron is scheduled at the configured interval.
+	 *
+	 * @param string $hook Cron hook name.
+	 */
+	private static function maybe_schedule_sync( $hook ) {
+		$event = wp_get_scheduled_event( $hook );
+
+		if ( ! $event ) {
+			wp_schedule_event( time() + MINUTE_IN_SECONDS, self::CRON_SCHEDULE, $hook );
+			return;
+		}
+
+		if ( self::CRON_SCHEDULE !== $event->schedule ) {
+			wp_clear_scheduled_hook( $hook );
+			wp_schedule_event( time() + MINUTE_IN_SECONDS, self::CRON_SCHEDULE, $hook );
 		}
 	}
 
