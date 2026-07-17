@@ -272,7 +272,7 @@ final class RHD_Artny_Directory_Data {
 	 * @param string                             $type       Directory type.
 	 * @param array<int, array<string, mixed>>   $records    API rows.
 	 * @param string                             $error      Optional API warning.
-	 * @param array<string, array{MembershipExpiry: string|null, OrganizationBio: string}>|null $primary_contact_map Contact ID => fields, or null to skip org primary-contact enrichment.
+	 * @param array<string, array<string, mixed>>|null $primary_contact_map Contact ID => fields, or null to skip org primary-contact enrichment.
 	 * @return array<string, mixed>
 	 */
 	private static function build_payload_from_records( $type, $records, $error = '', $primary_contact_map = null ) {
@@ -348,7 +348,7 @@ final class RHD_Artny_Directory_Data {
 	 * @param string                               $type       Directory type.
 	 * @param array<string, mixed>                 $record     Raw API row.
 	 * @param array<string, array<string, string>> $labels     Taxonomy labels (by reference).
-	 * @param array<string, array{MembershipExpiry: string|null, OrganizationBio: string}>|null $primary_contact_map Contact ID => fields, or null to skip org primary-contact enrichment.
+	 * @param array<string, array<string, mixed>>|null $primary_contact_map Contact ID => fields, or null to skip org primary-contact enrichment.
 	 * @return array<string, mixed>|null
 	 */
 	private static function transform_record( $type, $record, &$labels, $primary_contact_map = null ) {
@@ -363,7 +363,7 @@ final class RHD_Artny_Directory_Data {
 	 * @param array<string, mixed>                 $record     Raw Account row.
 	 * @param array<string, array<string, string>> $labels     Taxonomy labels (by reference).
 	 * @param array<string, mixed>                 $config     Directory config.
-	 * @param array<string, array{MembershipExpiry: string|null, OrganizationBio: string}>|null $primary_contact_map Contact ID => fields, or null to skip enrichment.
+	 * @param array<string, array<string, mixed>>|null $primary_contact_map Contact ID => fields, or null to skip enrichment.
 	 * @return array<string, mixed>|null
 	 */
 	private static function transform_organization_record( $record, &$labels, $config, $primary_contact_map = null ) {
@@ -376,12 +376,7 @@ final class RHD_Artny_Directory_Data {
 			return null;
 		}
 
-		$website = '';
-		if ( ! empty( $record['Website'] ) ) {
-			$website = self::normalize_url( (string) $record['Website'] );
-		} elseif ( ! empty( $record['WebsiteforProfile'] ) ) {
-			$website = self::normalize_url( (string) $record['WebsiteforProfile'] );
-		}
+		$primary = self::get_primary_contact_entry( $record, $primary_contact_map );
 
 		$organization_bio = self::resolve_organization_bio_from_primary_contact( $record, $primary_contact_map );
 		$description      = '' !== $organization_bio
@@ -391,10 +386,24 @@ final class RHD_Artny_Directory_Data {
 		$contact = array(
 			'Name'                        => $name,
 			'Description'                 => $description,
-			'Website'                     => $website,
-			'Instagram'                   => self::normalize_instagram( $record['Instagram'] ?? '' ),
-			'OrganizationLinkedInProfile' => self::normalize_url( (string) ( $record['OrganizationLinkedInProfile'] ?? $record['LinkedInProfileURL'] ?? '' ) ),
-			'OrganizationFacebookPage'    => self::normalize_url( (string) ( $record['OrganizationFacebookPage'] ?? '' ) ),
+			'Website'                     => self::resolve_organization_website( $record, $primary ),
+			'Instagram'                   => self::normalize_instagram(
+				self::resolve_primary_contact_string( $primary, 'OrganizationInstagram', $record['Instagram'] ?? '' )
+			),
+			'OrganizationLinkedInProfile' => self::normalize_url(
+				self::resolve_primary_contact_string(
+					$primary,
+					'OrganizationLinkedInProfile',
+					(string) ( $record['OrganizationLinkedInProfile'] ?? $record['LinkedInProfileURL'] ?? '' )
+				)
+			),
+			'OrganizationFacebookPage'    => self::normalize_url(
+				self::resolve_primary_contact_string(
+					$primary,
+					'OrganizationFacebookPage',
+					(string) ( $record['OrganizationFacebookPage'] ?? '' )
+				)
+			),
 			'MembershipExpiry'            => self::resolve_organization_membership_expiry( $record, $primary_contact_map ),
 		);
 
@@ -402,7 +411,7 @@ final class RHD_Artny_Directory_Data {
 			$contact[ $taxonomy ] = self::register_taxonomy_values(
 				$labels,
 				$taxonomy,
-				self::parse_multi_value( $record[ $taxonomy ] ?? '' ),
+				self::resolve_organization_taxonomy_values( $record, $primary, $taxonomy ),
 				! empty( $taxonomy_config['multi'] )
 			);
 		}
@@ -516,7 +525,7 @@ final class RHD_Artny_Directory_Data {
 	 * Primary-contact lookup for organization directory sync.
 	 *
 	 * @param string $type organizations|individuals.
-	 * @return array<string, array{MembershipExpiry: string|null, OrganizationBio: string}>|null Null when the Contact fetch failed (exclude organizations).
+	 * @return array<string, array<string, mixed>>|null Null when the Contact fetch failed (exclude organizations).
 	 */
 	private static function get_primary_contact_map_for_type( $type ) {
 		if ( RHD_Artny_Directory_Config::TYPE_ORGANIZATIONS !== $type ) {
@@ -540,21 +549,17 @@ final class RHD_Artny_Directory_Data {
 	 * Whether an organization's primary contact has active membership.
 	 *
 	 * @param array<string, mixed> $record              Raw Account row.
-	 * @param array<string, array{MembershipExpiry: string|null, OrganizationBio: string}>|null $primary_contact_map Contact ID => fields.
+	 * @param array<string, array<string, mixed>>|null $primary_contact_map Contact ID => fields.
 	 * @return bool
 	 */
 	private static function organization_membership_is_active( $record, $primary_contact_map ) {
-		if ( ! is_array( $primary_contact_map ) ) {
+		$primary = self::get_primary_contact_entry( $record, $primary_contact_map );
+
+		if ( null === $primary ) {
 			return false;
 		}
 
-		$primary_contact = isset( $record['PrimaryContact'] ) ? trim( (string) $record['PrimaryContact'] ) : '';
-
-		if ( '' === $primary_contact || ! array_key_exists( $primary_contact, $primary_contact_map ) ) {
-			return false;
-		}
-
-		$expiry = $primary_contact_map[ $primary_contact ]['MembershipExpiry'] ?? null;
+		$expiry = $primary['MembershipExpiry'] ?? null;
 
 		return ! self::is_membership_expired( $expiry );
 	}
@@ -629,39 +634,120 @@ final class RHD_Artny_Directory_Data {
 	 * Resolve organization membership expiry from the primary contact.
 	 *
 	 * @param array<string, mixed> $record              Raw Account row.
-	 * @param array<string, array{MembershipExpiry: string|null, OrganizationBio: string}>|null $primary_contact_map Contact ID => fields.
+	 * @param array<string, array<string, mixed>>|null $primary_contact_map Contact ID => fields.
 	 * @return string
 	 */
 	private static function resolve_organization_membership_expiry( $record, $primary_contact_map ) {
-		$primary_contact = isset( $record['PrimaryContact'] ) ? trim( (string) $record['PrimaryContact'] ) : '';
+		$primary = self::get_primary_contact_entry( $record, $primary_contact_map );
 
-		if ( '' === $primary_contact || ! is_array( $primary_contact_map ) || ! array_key_exists( $primary_contact, $primary_contact_map ) ) {
+		if ( null === $primary ) {
 			return '';
 		}
 
-		return self::normalize_membership_expiry_value( $primary_contact_map[ $primary_contact ]['MembershipExpiry'] ?? null );
+		return self::normalize_membership_expiry_value( $primary['MembershipExpiry'] ?? null );
 	}
 
 	/**
 	 * Resolve OrganizationBio from the organization's primary Contact.
 	 *
-	 * Used when the Account Description field is empty so card About content
-	 * (and require_description eligibility) can use the questionnaire bio.
+	 * Preferred over Account Description for card About content
+	 * (and require_description eligibility when enabled).
 	 *
 	 * @param array<string, mixed> $record              Raw Account row.
-	 * @param array<string, array{MembershipExpiry: string|null, OrganizationBio: string}>|null $primary_contact_map Contact ID => fields.
+	 * @param array<string, array<string, mixed>>|null $primary_contact_map Contact ID => fields.
 	 * @return string Sanitized bio, or empty string when unavailable.
 	 */
 	private static function resolve_organization_bio_from_primary_contact( $record, $primary_contact_map ) {
-		$primary_contact = isset( $record['PrimaryContact'] ) ? trim( (string) $record['PrimaryContact'] ) : '';
+		$primary = self::get_primary_contact_entry( $record, $primary_contact_map );
 
-		if ( '' === $primary_contact || ! is_array( $primary_contact_map ) || ! array_key_exists( $primary_contact, $primary_contact_map ) ) {
+		if ( null === $primary ) {
 			return '';
 		}
 
-		$bio = $primary_contact_map[ $primary_contact ]['OrganizationBio'] ?? '';
+		$bio = $primary['OrganizationBio'] ?? '';
 
 		return sanitize_textarea_field( (string) $bio );
+	}
+
+	/**
+	 * Look up the PrimaryContact entry for an Account row.
+	 *
+	 * @param array<string, mixed> $record              Raw Account row.
+	 * @param array<string, array<string, mixed>>|null $primary_contact_map Contact ID => fields.
+	 * @return array<string, mixed>|null
+	 */
+	private static function get_primary_contact_entry( $record, $primary_contact_map ) {
+		$primary_contact = isset( $record['PrimaryContact'] ) ? trim( (string) $record['PrimaryContact'] ) : '';
+
+		if ( '' === $primary_contact || ! is_array( $primary_contact_map ) || ! array_key_exists( $primary_contact, $primary_contact_map ) ) {
+			return null;
+		}
+
+		$entry = $primary_contact_map[ $primary_contact ];
+
+		return is_array( $entry ) ? $entry : null;
+	}
+
+	/**
+	 * Prefer a non-empty PrimaryContact string field; otherwise use the Account fallback.
+	 *
+	 * @param array<string, mixed>|null $primary       Primary contact fields.
+	 * @param string                    $primary_field Contact field name.
+	 * @param mixed                     $fallback      Account field value.
+	 * @return string
+	 */
+	private static function resolve_primary_contact_string( $primary, $primary_field, $fallback ) {
+		if ( is_array( $primary ) ) {
+			$value = isset( $primary[ $primary_field ] ) ? trim( (string) $primary[ $primary_field ] ) : '';
+			if ( '' !== $value ) {
+				return $value;
+			}
+		}
+
+		return trim( (string) $fallback );
+	}
+
+	/**
+	 * Organization website: PrimaryContact OrganizationWebsiteforProfile, then Account Website / WebsiteforProfile.
+	 *
+	 * @param array<string, mixed>      $record  Raw Account row.
+	 * @param array<string, mixed>|null $primary Primary contact fields.
+	 * @return string
+	 */
+	private static function resolve_organization_website( $record, $primary ) {
+		$from_contact = self::resolve_primary_contact_string( $primary, 'OrganizationWebsiteforProfile', '' );
+		if ( '' !== $from_contact ) {
+			return self::normalize_url( $from_contact );
+		}
+
+		if ( ! empty( $record['Website'] ) ) {
+			return self::normalize_url( (string) $record['Website'] );
+		}
+
+		if ( ! empty( $record['WebsiteforProfile'] ) ) {
+			return self::normalize_url( (string) $record['WebsiteforProfile'] );
+		}
+
+		return '';
+	}
+
+	/**
+	 * Taxonomy values: PrimaryContact field when it yields labels, else Account field.
+	 *
+	 * @param array<string, mixed>      $record   Raw Account row.
+	 * @param array<string, mixed>|null $primary  Primary contact fields.
+	 * @param string                    $taxonomy Shared taxonomy field name.
+	 * @return array<int, string>
+	 */
+	private static function resolve_organization_taxonomy_values( $record, $primary, $taxonomy ) {
+		if ( is_array( $primary ) ) {
+			$from_contact = self::parse_multi_value( $primary[ $taxonomy ] ?? '' );
+			if ( ! empty( $from_contact ) ) {
+				return $from_contact;
+			}
+		}
+
+		return self::parse_multi_value( $record[ $taxonomy ] ?? '' );
 	}
 
 	/**

@@ -30,14 +30,22 @@ PERFECTMIND_BASE_URL, PERFECTMIND_API_KEY, PERFECTMIND_CLIENT_NUMBER are all def
 - Use `ServerSideRender` in `edit` for editor preview of dynamic blocks.
 - **Render core block output via `do_blocks()` or `render_block()`** — do not hand-roll markup for blocks that ship icons/assets (e.g. `core/social-links` needs SVG icons from core). Match demo page block attributes (icon colors, layout) when mirroring existing designs.
 - **Multiple block variants:** Prefer separate registered block names (e.g. Organizations vs Individuals) with distinct inserter titles. Share PHP/JS/CSS via config — do not register duplicate or legacy block names in the inserter unless content migration requires it; use `supports.inserter: false` or omit legacy registration entirely when backwards compatibility is not needed.
+- **Front-end block asset versions:** For shared plugin `view.js` / `style.css` assets on live pages, register handles in PHP with `filemtime()` versions instead of relying on static `block.json` versions. CDN/browser caches can keep serving stale `?ver=1.0.0` assets even when disk files and containers are updated.
 - When renaming a plugin: rename folder + main file, update all slugs/classes/text domains/block names, swap `active_plugins` entry, and update `<!-- wp:namespace/block -->` comments in post content.
-- Verify on dev: plugin active, block registered after `init`, page renders expected markup (`docker exec … php -r "require wp-load.php; …"`). For editor issues, also verify REST block-renderer accepts the attributes `ServerSideRender` sends.
+- Verify on dev: plugin active, block registered after `init`, page renders expected markup (`docker exec … php -r "require wp-load.php; …"`), and the browser is loading the expected asset URLs/content (query string and fetched JS/CSS source), not a cached CDN copy. For editor issues, also verify REST block-renderer accepts the attributes `ServerSideRender` sends.
 
 ## UI details in directory cards
 
 - `<details><summary>` defaults to bold in browsers — set `font-weight: 400` (or `normal`) explicitly when summary should match body text.
 - Scope card typography overrides under plugin classes (e.g. `.rhd-artny-directory__card .wp-block-details`) using theme font-size presets (`--wp--preset--font-size--small`).
 - **`[hidden]` vs CSS `display`:** Any rule that sets `display` (e.g. flex/grid) on a control that toggles the HTML `hidden` attribute must also define the matching `[hidden] { display: none !important; }` (see `.rhd-artny-directory__pagination` and cards). Otherwise Prev/Next (or similar) stays visible on single-page result sets even when JS sets `hidden`.
+
+## Directory filter form layout (`rhd-artny-directory`)
+
+- **Peer wrapping, not nested side-by-side:** Search and each filter dropdown must be peers in one `auto-fit` / `minmax` grid so they wrap together across breakpoints. Use `display: contents` on `__filter-groups` so dropdowns participate in the form grid. Do **not** put search in column 1 and a nested wrapping filter grid in column 2.
+- **Avoid `align-items: end` on wrapping filter bars:** That alignment looks correct when all fields share one row (inputs line up), but when filters wrap to multiple rows the short search cell sinks to the last row. Prefer `align-items: start`.
+- **Shared stylesheet:** Organizations and Individuals share `assets/style.css` — fix layout once; both variants inherit it.
+- **No public layout fixtures:** Do not leave repro/test HTML under plugin `assets/` (it is served). Use `/tmp` or a non-web path for CSS layout probes; prefer static CSS contract checks when headless browsers are unavailable.
 
 ## Accessible multi-select filter dropdowns
 
@@ -49,6 +57,7 @@ When replacing checkbox groups with compact multi-select filters (directory bloc
 - **Panel ARIA:** `role="group"` + `aria-labelledby` on the group label only. Avoid redundant `<fieldset>`/`<legend>` inside the panel when the group is already labeled.
 - **Keyboard / behavior:** Enter/Space opens; Escape closes and returns focus to trigger; click outside closes; only one panel open at a time. Checkboxes must not be in tab order when panel is `hidden`.
 - **Status / empty states:** Result counts and **zero-result messages** must go through an existing `role="status" aria-live="polite"` region. Do not clear the live region and rely on a separate static empty element alone. If a visible empty message remains for sighted users, mark it `aria-hidden="true"` when the live region carries the announcement.
+- **Visible filter summaries vs live regions:** If adding a visible “Filtered by …” summary, keep visible text and `role="status"` count text from duplicating each other. Use a separate visually hidden span inside the live region only when extra context needs to be announced to screen readers.
 - **Helper copy:** Associate instructional text with the form via `aria-describedby`.
 - **Verification:** Do not treat accessible UI as complete from markup/implementation alone. Run structured verification (live page DOM, keyboard paths, accessible names) before sign-off; fix Major WCAG gaps (4.1.2 Name/Role/Value, 4.1.3 Status Messages) before claiming AA-ready.
 
@@ -56,8 +65,19 @@ When replacing checkbox groups with compact multi-select filters (directory bloc
 
 - **Config-driven variants:** Use a central config (table, fields, taxonomies, eligibility, block name) for each directory type. Share API, cache, render, and `view.js`; resolve variant from block name in render — avoid duplicating block plugins.
 - **Eligibility vs filter options:** Displayable cards and filter dropdowns are not the same dataset. A sync may have zero displayable contacts (e.g. missing bio/web presence) while taxonomy labels still exist from raw API rows. Populate filter dropdowns from cached taxonomy labels when no displayable contact carries that slug; do not hide filters solely because `contacts` is empty.
-- **Cache:** Use the cached payload when present even if `contacts` is empty, so labels and sync metadata persist between requests. Bump the type’s `cache_key` when transform/eligibility rules change.
+- **Cache:** Use the cached payload when present even if `contacts` is empty, so labels and sync metadata persist between requests. Bump the type’s `cache_key` when transform, eligibility, or field-resolution precedence rules change.
 - **Xplor Contact vs Account:** Individuals use `Contact` (name from `FirstName`/`MiddleName`/`LastName`, `PrimaryPractice`, `ArtisticPractices`, individual social fields). Organizations use `Account` (`AccountType = Organization`). Keep separate cache keys and cron hooks per type.
+- **Organizations field roles (do not conflate):**
+  - Questionnaire / profile data for orgs lives on the Account’s `PrimaryContact` (Contact row). Prefer PrimaryContact values when non-empty; fall back to the matching Account field. Do not treat Account and Contact org fields as interchangeable sources without an explicit precedence rule.
+  - `OrganizationBio` (PrimaryContact) → preferred card About/`Description`. Account `Description` → fallback only when primary contact has no `OrganizationBio`.
+  - Website → PrimaryContact `OrganizationWebsiteforProfile`, else Account `Website`, else Account `WebsiteforProfile`.
+  - Instagram → PrimaryContact `OrganizationInstagram`, else Account `Instagram`.
+  - LinkedIn → PrimaryContact `OrganizationLinkedInProfile`, else Account `OrganizationLinkedInProfile` / `LinkedInProfileURL`.
+  - Facebook → PrimaryContact `OrganizationFacebookPage`, else Account `OrganizationFacebookPage`.
+  - Taxonomies (`ArtisticFocus`, `OrganizationalFocus`, `PublicProgrammingLocations`) → same field names on Contact and Account; prefer PrimaryContact when `parse_multi_value` yields labels, else Account.
+  - Fetch all PrimaryContact-sourced org fields (`MembershipExpiry`, `OrganizationBio`, website/social/taxonomy keys above) via a single `fetch_primary_contact_map()` Contact table fetch; do not add a second Contact query per field.
+  - Normalized `Description` satisfies `require_description` eligibility when present.
+- **Org field remap inventory:** Before changing Account→PrimaryContact mappings, list each field by role: displayed, keyword-searchable (`data-search`), filter-dropdown, and eligibility-only. Keep card/render normalized keys stable; change resolution in the transform layer and bump the org `cache_key`.
 - **Individuals field roles (do not conflate):**
   - `ArtistBio` → card About/`Description` content only (map when `Description` empty). Not a display gate unless `require_description` is true.
   - `PrimaryPractice` → questionnaire-completed signal; used when `require_web_presence` is false as an alternate eligibility path.
@@ -68,4 +88,5 @@ When replacing checkbox groups with compact multi-select filters (directory bloc
 - **Individuals bio field:** Questionnaire bios live in `ArtistBio`, not `Description`. Map `ArtistBio` into the card `Description` when `Description` is empty. Include `ArtistBio` (and `Email` when filtering) in Contact field picks.
 - **Individuals test contacts:** Exclude Contact emails whose local part contains `+test` (Xplor questionnaire test accounts). Do not treat repeated names or mismatched websites/bios as a transform bug until raw ObjectRecords rows are checked — CRM test pollution often explains both.
 - **Directory data debugging:** When cards look wrong or too few, measure the eligibility funnel on raw ObjectRecords (named → not test → not expired → has PrimaryPractice → has ArtistBio → has web) before changing rules. Sparse displayable counts with many active memberships usually mean incomplete questionnaire/web presence, not a render bug.
+- **Directory transform verification:** When changing field mapping or precedence, define the both-fields-populated case before implementing empty-only fallbacks. Verify with `docker exec … php -r "require wp-load.php; …"`: precedence regression, `refresh_cache()`, counts of records with both source fields, and an individuals smoke-check when org transform changes.
 - **Membership expiry:** Exclude expired entries from directory cards. Organizations: resolve `PrimaryContact` to a Contact `ID` and apply that contact's `MembershipExpiry`; exclude orgs with no primary contact, missing contact map, or absent/expired primary contact membership (null/empty/sentinel expiry = expired). Individuals: skip when `MembershipExpiry` is explicitly before today; null/empty/sentinel expiry does not alone exclude an individual. Bump cache keys when eligibility rules change.

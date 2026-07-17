@@ -77,7 +77,7 @@ final class RHD_Artny_Directory_Config {
 			'description'     => __( 'Searchable member directory with filters for Xplor organizations.', 'rhd-artny-directory' ),
 			'icon'            => 'groups',
 			'table'           => 'Account',
-			'cache_key'       => 'rhd_artny_directory_accounts_v10',
+			'cache_key'       => 'rhd_artny_directory_accounts_v11',
 			'cron_hook'       => 'rhd_artny_directory_sync_accounts',
 			'api_fields'      => array(
 				'Name',

@@ -46,11 +46,21 @@ final class RHD_Artny_Directory_Perfectmind_Api {
 	/**
 	 * Contact ID => primary-contact fields used by the organizations directory.
 	 *
-	 * Includes MembershipExpiry (membership gate) and OrganizationBio
-	 * (Account Description fallback when the org row has no bio).
+	 * Includes MembershipExpiry (membership gate), OrganizationBio, and
+	 * questionnaire web/social/taxonomy fields preferred over Account values.
 	 *
 	 * @return array{
-	 *     map: array<string, array{MembershipExpiry: string|null, OrganizationBio: string}>,
+	 *     map: array<string, array{
+	 *         MembershipExpiry: string|null,
+	 *         OrganizationBio: string,
+	 *         OrganizationWebsiteforProfile: string,
+	 *         OrganizationInstagram: string,
+	 *         OrganizationLinkedInProfile: string,
+	 *         OrganizationFacebookPage: string,
+	 *         ArtisticFocus: string,
+	 *         OrganizationalFocus: string,
+	 *         PublicProgrammingLocations: string
+	 *     }>,
 	 *     error: string
 	 * }
 	 */
@@ -73,12 +83,17 @@ final class RHD_Artny_Directory_Perfectmind_Api {
 
 			$id = (string) $row['ID'];
 			$map[ $id ] = array(
-				'MembershipExpiry' => isset( $row['MembershipExpiry'] ) && null !== $row['MembershipExpiry']
+				'MembershipExpiry'               => isset( $row['MembershipExpiry'] ) && null !== $row['MembershipExpiry']
 					? (string) $row['MembershipExpiry']
 					: null,
-				'OrganizationBio'  => isset( $row['OrganizationBio'] ) && null !== $row['OrganizationBio']
-					? (string) $row['OrganizationBio']
-					: '',
+				'OrganizationBio'                => self::string_field( $row, 'OrganizationBio' ),
+				'OrganizationWebsiteforProfile'  => self::string_field( $row, 'OrganizationWebsiteforProfile' ),
+				'OrganizationInstagram'          => self::string_field( $row, 'OrganizationInstagram' ),
+				'OrganizationLinkedInProfile'    => self::string_field( $row, 'OrganizationLinkedInProfile' ),
+				'OrganizationFacebookPage'       => self::string_field( $row, 'OrganizationFacebookPage' ),
+				'ArtisticFocus'                  => self::string_field( $row, 'ArtisticFocus' ),
+				'OrganizationalFocus'            => self::string_field( $row, 'OrganizationalFocus' ),
+				'PublicProgrammingLocations'     => self::string_field( $row, 'PublicProgrammingLocations' ),
 			);
 		}
 
@@ -86,6 +101,19 @@ final class RHD_Artny_Directory_Perfectmind_Api {
 			'map'   => $map,
 			'error' => '',
 		);
+	}
+
+	/**
+	 * @param array<string, mixed> $row   Raw API row.
+	 * @param string               $field Field name.
+	 * @return string
+	 */
+	private static function string_field( $row, $field ) {
+		if ( ! isset( $row[ $field ] ) || null === $row[ $field ] ) {
+			return '';
+		}
+
+		return (string) $row[ $field ];
 	}
 
 	/**

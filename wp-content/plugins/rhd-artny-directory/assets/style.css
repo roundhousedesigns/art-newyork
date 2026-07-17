@@ -235,9 +235,55 @@
 	color: var(--rhd-directory-surface);
 }
 
-.rhd-artny-directory__status {
+.rhd-artny-directory__status-bar {
 	margin: 0 0 var(--wp--preset--spacing--30, 1rem);
+}
+
+.rhd-artny-directory__active-filters {
+	margin: 0 0 0.35rem;
 	font-size: var(--wp--preset--font-size--small, 0.95rem);
+	color: var(--rhd-directory-text);
+	transition:
+		box-shadow 320ms ease,
+		background-color 320ms ease;
+	border-radius: 4px;
+	padding: 0.2rem 0.45rem;
+	margin-left: -0.45rem;
+	width: fit-content;
+	max-width: 100%;
+}
+
+.rhd-artny-directory__active-filters[hidden] {
+	display: none !important;
+}
+
+.rhd-artny-directory__active-filters.is-just-updated {
+	background-color: rgba(165, 29, 63, 0.1);
+	box-shadow: inset 3px 0 0 var(--rhd-directory-border);
+}
+
+.rhd-artny-directory__status {
+	margin: 0;
+	font-size: var(--wp--preset--font-size--small, 0.95rem);
+}
+
+.rhd-artny-directory__status .screen-reader-text {
+	border: 0;
+	clip: rect(1px, 1px, 1px, 1px);
+	clip-path: inset(50%);
+	height: 1px;
+	margin: -1px;
+	overflow: hidden;
+	padding: 0;
+	position: absolute;
+	width: 1px;
+	word-wrap: normal !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.rhd-artny-directory__active-filters {
+		transition: none;
+	}
 }
 
 .rhd-artny-directory__results-viewport {
@@ -248,6 +294,8 @@
 .rhd-artny-directory__results {
 	--rhd-directory-page-transition-duration: 420ms;
 	--rhd-directory-page-transition-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+	--rhd-directory-filter-transition-duration: 220ms;
+	--rhd-directory-filter-transition-ease: ease;
 	--rhd-directory-masonry-gap: var(--wp--preset--spacing--50, 1.5rem);
 
 	display: flex;
@@ -300,6 +348,18 @@
 .rhd-artny-directory__results.is-paginating-in-prev {
 	opacity: 0;
 	transform: translateX(-2.75rem);
+}
+
+.rhd-artny-directory__results.is-filtering {
+	transition:
+		transform var(--rhd-directory-filter-transition-duration) var(--rhd-directory-filter-transition-ease),
+		opacity var(--rhd-directory-filter-transition-duration) var(--rhd-directory-filter-transition-ease);
+}
+
+.rhd-artny-directory__results.is-filtering-out,
+.rhd-artny-directory__results.is-filtering-in {
+	opacity: 0;
+	transform: translateY(0.35rem);
 }
 
 @media (prefers-reduced-motion: reduce) {

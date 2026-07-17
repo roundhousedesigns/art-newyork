@@ -39,6 +39,9 @@
 		var searchInput = root.querySelector( '[data-rhd-artny-directory-search]' );
 		var clearButton = root.querySelector( '[data-rhd-artny-directory-clear]' );
 		var statusEl = root.querySelector( '[data-rhd-artny-directory-status]' );
+		var statusFiltersEl = root.querySelector( '[data-rhd-artny-directory-status-filters]' );
+		var statusCountEl = root.querySelector( '[data-rhd-artny-directory-status-count]' );
+		var activeFiltersEl = root.querySelector( '[data-rhd-artny-directory-active-filters]' );
 		var emptyEl = root.querySelector( '[data-rhd-artny-directory-empty]' );
 		var paginationEl = root.querySelector( '[data-rhd-artny-directory-pagination]' );
 		var pageStatusEl = root.querySelector( '[data-rhd-artny-directory-page-status]' );
@@ -322,6 +325,14 @@
 
 		var currentPage = 1;
 		var isAnimating = false;
+		var filterSearchTimer = 0;
+		var filterAnimFallbackTimer = 0;
+		var filterAnimGeneration = 0;
+		var activeFiltersHighlightTimer = 0;
+		var hasAppliedInitialFilters = false;
+		var FILTER_SEARCH_DEBOUNCE_MS = 180;
+		var FILTER_TRANSITION_FALLBACK_MS = 520;
+		var ACTIVE_FILTERS_HIGHLIGHT_MS = 1400;
 
 		/**
 		 * @returns {Record<string, string|string[]>}
@@ -438,37 +449,132 @@
 		}
 
 		/**
+		 * @returns {string[]}
+		 */
+		function getActiveFilterParts() {
+			var parts = [];
+			var query = ( searchInput.value || '' ).trim();
+
+			if ( query ) {
+				parts.push( 'Search: \u201C' + query + '\u201D' );
+			}
+
+			filterDropdowns.forEach( function ( dropdown ) {
+				var checked = dropdown.querySelectorAll( '[data-rhd-artny-directory-filter]:checked' );
+				if ( ! checked.length ) {
+					return;
+				}
+
+				var groupLabelEl = dropdown.querySelector( '.rhd-artny-directory__filter-dropdown-label' );
+				var groupLabel = groupLabelEl ? groupLabelEl.textContent.trim() : '';
+				var values = Array.prototype.map.call( checked, function ( input ) {
+					return input.getAttribute( 'data-rhd-artny-directory-filter-label' ) || input.value;
+				} );
+
+				if ( groupLabel ) {
+					parts.push( groupLabel + ': ' + values.join( ', ' ) );
+				} else {
+					parts.push( values.join( ', ' ) );
+				}
+			} );
+
+			return parts;
+		}
+
+		/**
+		 * @returns {string}
+		 */
+		function formatActiveFiltersSummary() {
+			var parts = getActiveFilterParts();
+			if ( ! parts.length ) {
+				return '';
+			}
+
+			return 'Filtered by ' + parts.join( ' \u00B7 ' ) + '.';
+		}
+
+		/**
+		 * @param {boolean} highlight
+		 */
+		function updateActiveFiltersSummary( highlight ) {
+			if ( ! activeFiltersEl ) {
+				return;
+			}
+
+			var summary = formatActiveFiltersSummary();
+
+			if ( ! summary ) {
+				activeFiltersEl.textContent = '';
+				activeFiltersEl.hidden = true;
+				activeFiltersEl.classList.remove( 'is-just-updated' );
+				return;
+			}
+
+			activeFiltersEl.textContent = summary;
+			activeFiltersEl.hidden = false;
+
+			if ( ! highlight || prefersReducedMotion ) {
+				return;
+			}
+
+			if ( activeFiltersHighlightTimer ) {
+				window.clearTimeout( activeFiltersHighlightTimer );
+			}
+
+			activeFiltersEl.classList.remove( 'is-just-updated' );
+			// Force reflow so the highlight can re-run on repeated term clicks.
+			void activeFiltersEl.offsetWidth;
+			activeFiltersEl.classList.add( 'is-just-updated' );
+
+			activeFiltersHighlightTimer = window.setTimeout( function () {
+				activeFiltersHighlightTimer = 0;
+				activeFiltersEl.classList.remove( 'is-just-updated' );
+			}, ACTIVE_FILTERS_HIGHLIGHT_MS );
+		}
+
+		/**
 		 * @param {number} matchedCount
 		 * @param {number} page
 		 * @param {number} totalPages
 		 * @param {number} rangeStart
 		 * @param {number} rangeEnd
+		 * @param {{ announceFilters?: boolean }} [options]
 		 */
-		function updateStatus( matchedCount, page, totalPages, rangeStart, rangeEnd ) {
-			if ( ! statusEl ) {
-				return;
-			}
+		function updateStatus( matchedCount, page, totalPages, rangeStart, rangeEnd, options ) {
+			var countText = '';
 
 			if ( matchedCount === 0 ) {
-				statusEl.textContent = emptyMessage;
+				countText = emptyMessage;
+			} else {
+				var entryLabel = matchedCount === 1 ? entrySingular : entryPlural;
+
+				if ( totalPages <= 1 ) {
+					countText = 'Showing ' + matchedCount + ' ' + entryLabel + '.';
+				} else {
+					countText = 'Showing ' + rangeStart + '\u2013' + rangeEnd + ' of ' + matchedCount + ' ' + entryPlural + ' (page ' + page + ' of ' + totalPages + ').';
+				}
+			}
+
+			var filterSummary = ( options && options.announceFilters ) ? formatActiveFiltersSummary() : '';
+
+			if ( statusCountEl ) {
+				statusCountEl.textContent = countText;
+			} else if ( statusEl ) {
+				statusEl.textContent = filterSummary ? filterSummary + ' ' + countText : countText;
 				return;
 			}
 
-			var entryLabel = matchedCount === 1 ? entrySingular : entryPlural;
-
-			if ( totalPages <= 1 ) {
-				statusEl.textContent = 'Showing ' + matchedCount + ' ' + entryLabel + '.';
-				return;
+			if ( statusFiltersEl ) {
+				statusFiltersEl.textContent = filterSummary ? filterSummary + ' ' : '';
 			}
-
-			statusEl.textContent = 'Showing ' + rangeStart + '\u2013' + rangeEnd + ' of ' + matchedCount + ' ' + entryPlural + ' (page ' + page + ' of ' + totalPages + ').';
 		}
 
 		/**
 		 * @param {boolean} resetPage
+		 * @param {{ highlightActiveFilters?: boolean }} [options]
 		 * @returns {{ matchedCount: number, totalPages: number, rangeStart: number, rangeEnd: number }}
 		 */
-		function applyVisibleCards( resetPage ) {
+		function applyVisibleCards( resetPage, options ) {
 			if ( resetPage ) {
 				currentPage = 1;
 			}
@@ -503,7 +609,10 @@
 			var rangeStart = matchedCount === 0 ? 0 : start + 1;
 			var rangeEnd = matchedCount === 0 ? 0 : start + visibleOnPage;
 
-			updateStatus( matchedCount, currentPage, totalPages, rangeStart, rangeEnd );
+			updateActiveFiltersSummary( !!( options && options.highlightActiveFilters ) );
+			updateStatus( matchedCount, currentPage, totalPages, rangeStart, rangeEnd, {
+				announceFilters: !!( options && options.highlightActiveFilters ),
+			} );
 			updatePagination( currentPage, totalPages );
 
 			if ( emptyEl ) {
@@ -523,7 +632,7 @@
 		/**
 		 * @param {string} className
 		 */
-		function clearPaginationClasses( className ) {
+		function clearResultsTransitionClasses( className ) {
 			if ( ! resultsEl ) {
 				return;
 			}
@@ -532,12 +641,110 @@
 				'is-paginating-out-next',
 				'is-paginating-out-prev',
 				'is-paginating-in-next',
-				'is-paginating-in-prev'
+				'is-paginating-in-prev',
+				'is-filtering',
+				'is-filtering-out',
+				'is-filtering-in'
 			);
 
 			if ( className ) {
 				resultsEl.classList.remove( className );
 			}
+		}
+
+		/**
+		 * @param {boolean} resetPage
+		 * @param {{ highlightActiveFilters?: boolean }} [options]
+		 */
+		function animateFilterChange( resetPage, options ) {
+			if ( ! resultsEl || prefersReducedMotion ) {
+				applyVisibleCards( resetPage, options );
+				return;
+			}
+
+			if ( filterAnimFallbackTimer ) {
+				window.clearTimeout( filterAnimFallbackTimer );
+				filterAnimFallbackTimer = 0;
+			}
+
+			filterAnimGeneration += 1;
+			var generation = filterAnimGeneration;
+
+			isAnimating = true;
+			setPaginationBusy( true );
+
+			if ( resultsViewportEl ) {
+				resultsViewportEl.style.minHeight = resultsEl.offsetHeight + 'px';
+			}
+
+			function finishAnimation() {
+				if ( generation !== filterAnimGeneration ) {
+					return;
+				}
+
+				if ( filterAnimFallbackTimer ) {
+					window.clearTimeout( filterAnimFallbackTimer );
+					filterAnimFallbackTimer = 0;
+				}
+
+				clearResultsTransitionClasses();
+				isAnimating = false;
+
+				if ( resultsViewportEl ) {
+					resultsViewportEl.style.minHeight = '';
+				}
+
+				setPaginationBusy( false );
+				layoutMasonry();
+			}
+
+			clearResultsTransitionClasses();
+			resultsEl.classList.add( 'is-filtering', 'is-filtering-out' );
+
+			function onExitEnd( event ) {
+				if ( generation !== filterAnimGeneration ) {
+					resultsEl.removeEventListener( 'transitionend', onExitEnd );
+					return;
+				}
+
+				if ( event.target !== resultsEl || event.propertyName !== 'opacity' ) {
+					return;
+				}
+
+				resultsEl.removeEventListener( 'transitionend', onExitEnd );
+				resultsEl.classList.remove( 'is-filtering-out' );
+				applyVisibleCards( resetPage, options );
+				resultsEl.classList.add( 'is-filtering-in' );
+
+				window.requestAnimationFrame( function () {
+					window.requestAnimationFrame( function () {
+						if ( generation !== filterAnimGeneration ) {
+							return;
+						}
+
+						resultsEl.classList.remove( 'is-filtering-in' );
+
+						function onEnterEnd( enterEvent ) {
+							if ( generation !== filterAnimGeneration ) {
+								resultsEl.removeEventListener( 'transitionend', onEnterEnd );
+								return;
+							}
+
+							if ( enterEvent.target !== resultsEl || enterEvent.propertyName !== 'opacity' ) {
+								return;
+							}
+
+							resultsEl.removeEventListener( 'transitionend', onEnterEnd );
+							finishAnimation();
+						}
+
+						resultsEl.addEventListener( 'transitionend', onEnterEnd );
+					} );
+				} );
+			}
+
+			resultsEl.addEventListener( 'transitionend', onExitEnd );
+			filterAnimFallbackTimer = window.setTimeout( finishAnimation, FILTER_TRANSITION_FALLBACK_MS );
 		}
 
 		/**
@@ -566,7 +773,7 @@
 					fallbackTimer = 0;
 				}
 
-				clearPaginationClasses();
+				clearResultsTransitionClasses();
 				isAnimating = false;
 
 				if ( resultsViewportEl ) {
@@ -577,7 +784,7 @@
 				layoutMasonry();
 			}
 
-			clearPaginationClasses();
+			clearResultsTransitionClasses();
 			resultsEl.classList.add( outClass );
 
 			function onExitEnd( event ) {
@@ -586,7 +793,7 @@
 				}
 
 				resultsEl.removeEventListener( 'transitionend', onExitEnd );
-				clearPaginationClasses();
+				clearResultsTransitionClasses();
 				applyVisibleCards( false );
 				resultsEl.classList.add( inClass );
 
@@ -615,32 +822,72 @@
 		/**
 		 * @param {boolean} resetPage
 		 * @param {'next'|'prev'|null} slideDirection
+		 * @param {{ animate?: boolean, highlightActiveFilters?: boolean }} [options]
 		 */
-		function applyFilters( resetPage, slideDirection ) {
+		function applyFilters( resetPage, slideDirection, options ) {
+			var shouldAnimate = options && options.animate;
+			var cardOptions = {
+				highlightActiveFilters: !!( options && options.highlightActiveFilters ),
+			};
+
 			if ( slideDirection && ! resetPage ) {
 				animatePageChange( slideDirection );
 				return;
 			}
 
-			applyVisibleCards( resetPage );
+			// Update the visible filter summary immediately so card-term clicks
+			// feedback isn't deferred until the results fade finishes.
+			updateActiveFiltersSummary( cardOptions.highlightActiveFilters );
+
+			if ( shouldAnimate && hasAppliedInitialFilters ) {
+				animateFilterChange( resetPage, cardOptions );
+				return;
+			}
+
+			applyVisibleCards( resetPage, cardOptions );
+			hasAppliedInitialFilters = true;
 		}
 
-		form.addEventListener( 'input', function () {
-			applyFilters( true );
+		form.addEventListener( 'input', function ( event ) {
+			var isSearchInput = event.target === searchInput;
+
+			if ( isSearchInput ) {
+				if ( filterSearchTimer ) {
+					window.clearTimeout( filterSearchTimer );
+				}
+
+				filterSearchTimer = window.setTimeout( function () {
+					filterSearchTimer = 0;
+					applyFilters( true, null, { animate: true } );
+				}, FILTER_SEARCH_DEBOUNCE_MS );
+				return;
+			}
+
+			applyFilters( true, null, { animate: true } );
 		} );
 		form.addEventListener( 'change', function () {
-			applyFilters( true );
+			if ( filterSearchTimer ) {
+				window.clearTimeout( filterSearchTimer );
+				filterSearchTimer = 0;
+			}
+
+			applyFilters( true, null, { animate: true } );
 		} );
 
 		if ( clearButton ) {
 			clearButton.addEventListener( 'click', function () {
+				if ( filterSearchTimer ) {
+					window.clearTimeout( filterSearchTimer );
+					filterSearchTimer = 0;
+				}
+
 				searchInput.value = '';
 				form.querySelectorAll( 'input[type="checkbox"], input[type="radio"]' ).forEach( function ( input ) {
 					input.checked = false;
 				} );
 				closeAllDropdowns( null );
 				filterDropdowns.forEach( updateDropdownSummary );
-				applyFilters( true );
+				applyFilters( true, null, { animate: true } );
 				searchInput.focus();
 			} );
 		}
@@ -693,18 +940,27 @@
 
 			var checkbox = form.querySelector( 'input[type="checkbox"][value="' + slug + '"], input[type="radio"][value="' + slug + '"]' );
 			if ( checkbox ) {
-				checkbox.checked = true;
+				var category = checkbox.getAttribute( 'data-rhd-artny-directory-filter' );
+
+				if ( category ) {
+					form.querySelectorAll( '[data-rhd-artny-directory-filter="' + category + '"]' ).forEach( function ( input ) {
+						input.checked = input === checkbox;
+					} );
+				} else {
+					checkbox.checked = true;
+				}
+
 				var dropdown = checkbox.closest( '[data-rhd-artny-directory-filter-dropdown]' );
 				if ( dropdown ) {
 					updateDropdownSummary( dropdown );
 				}
-				applyFilters( true );
+				applyFilters( true, null, { animate: true, highlightActiveFilters: true } );
 				return;
 			}
 
 			if ( label ) {
 				searchInput.value = label;
-				applyFilters( true );
+				applyFilters( true, null, { animate: true, highlightActiveFilters: true } );
 			}
 		} );
 

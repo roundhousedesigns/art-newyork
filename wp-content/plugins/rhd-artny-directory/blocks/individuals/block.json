@@ -18,7 +18,5 @@
 			"type": "string"
 		}
 	},
-	"viewScript": "file:../../assets/view.js",
-	"style": "file:../../assets/style.css",
 	"render": "file:./render.php"
 }

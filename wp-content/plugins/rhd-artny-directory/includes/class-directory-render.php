@@ -253,7 +253,13 @@ final class RHD_Artny_Directory_Render {
 	 */
 	private static function render_status( $root_id ) {
 		?>
-		<p class="rhd-artny-directory__status alignwide" role="status" aria-live="polite" data-rhd-artny-directory-status></p>
+		<div class="rhd-artny-directory__status-bar alignwide">
+			<p class="rhd-artny-directory__active-filters" hidden aria-hidden="true" data-rhd-artny-directory-active-filters></p>
+			<p class="rhd-artny-directory__status" role="status" aria-live="polite" data-rhd-artny-directory-status>
+				<span class="screen-reader-text" data-rhd-artny-directory-status-filters></span>
+				<span data-rhd-artny-directory-status-count></span>
+			</p>
+		</div>
 		<?php
 	}
 

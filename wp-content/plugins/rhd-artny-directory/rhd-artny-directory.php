@@ -84,15 +84,61 @@ final class RHD_Artny_Directory_Plugin {
 	}
 
 	/**
+	 * Register front-end view script with filemtime cache-busting.
+	 *
+	 * block.json "viewScript" alone uses the static block version (1.0.0),
+	 * which Cloudflare caches indefinitely across asset updates.
+	 *
+	 * @return string Script handle.
+	 */
+	private function register_view_script() {
+		$view_script = 'rhd-artny-directory-view';
+		$view_path   = RHD_ARTNY_DIRECTORY_PATH . 'assets/view.js';
+
+		wp_register_script(
+			$view_script,
+			RHD_ARTNY_DIRECTORY_URL . 'assets/view.js',
+			array(),
+			file_exists( $view_path ) ? (string) filemtime( $view_path ) : RHD_ARTNY_DIRECTORY_VERSION,
+			true
+		);
+
+		return $view_script;
+	}
+
+	/**
+	 * Register front-end stylesheet with filemtime cache-busting.
+	 *
+	 * @return string Style handle.
+	 */
+	private function register_block_style() {
+		$style_handle = 'rhd-artny-directory-style';
+		$style_path   = RHD_ARTNY_DIRECTORY_PATH . 'assets/style.css';
+
+		wp_register_style(
+			$style_handle,
+			RHD_ARTNY_DIRECTORY_URL . 'assets/style.css',
+			array(),
+			file_exists( $style_path ) ? (string) filemtime( $style_path ) : RHD_ARTNY_DIRECTORY_VERSION
+		);
+
+		return $style_handle;
+	}
+
+	/**
 	 * Register directory blocks from block.json metadata.
 	 */
 	public function register_blocks() {
 		$editor_script = $this->register_editor_script();
+		$view_script   = $this->register_view_script();
+		$style_handle  = $this->register_block_style();
 
 		register_block_type(
 			RHD_ARTNY_DIRECTORY_PATH,
 			array(
 				'editor_script' => $editor_script,
+				'view_script'   => $view_script,
+				'style'         => $style_handle,
 			)
 		);
 
@@ -100,6 +146,8 @@ final class RHD_Artny_Directory_Plugin {
 			RHD_ARTNY_DIRECTORY_PATH . 'blocks/individuals',
 			array(
 				'editor_script' => $editor_script,
+				'view_script'   => $view_script,
+				'style'         => $style_handle,
 			)
 		);
 	}
