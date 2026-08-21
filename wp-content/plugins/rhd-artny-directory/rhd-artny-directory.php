@@ -2,7 +2,7 @@
 /**
  * Plugin Name: RHD ART/NY Directory
  * Description: Searchable member directory blocks with filters for Xplor organizations and individuals.
- * Version: 1.1.0
+ * Version: 1.2.0
  * Author: Roundhouse Designs
  * Text Domain: rhd-artny-directory
  * Requires at least: 6.5
@@ -13,11 +13,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'RHD_ARTNY_DIRECTORY_VERSION', '1.1.0' );
+define( 'RHD_ARTNY_DIRECTORY_VERSION', '1.2.0' );
 define( 'RHD_ARTNY_DIRECTORY_PATH', plugin_dir_path( __FILE__ ) );
 define( 'RHD_ARTNY_DIRECTORY_URL', plugin_dir_url( __FILE__ ) );
 
 require_once RHD_ARTNY_DIRECTORY_PATH . 'includes/class-directory-config.php';
+require_once RHD_ARTNY_DIRECTORY_PATH . 'includes/class-directory-exclusions.php';
 require_once RHD_ARTNY_DIRECTORY_PATH . 'includes/class-demo-data.php';
 require_once RHD_ARTNY_DIRECTORY_PATH . 'includes/class-perfectmind-api.php';
 require_once RHD_ARTNY_DIRECTORY_PATH . 'includes/class-directory-data.php';

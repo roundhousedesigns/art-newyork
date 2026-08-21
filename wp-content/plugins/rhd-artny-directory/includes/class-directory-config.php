@@ -77,7 +77,7 @@ final class RHD_Artny_Directory_Config {
 			'description'     => __( 'Searchable member directory with filters for Xplor organizations.', 'rhd-artny-directory' ),
 			'icon'            => 'groups',
 			'table'           => 'Account',
-			'cache_key'       => 'rhd_artny_directory_accounts_v11',
+			'cache_key'       => 'rhd_artny_directory_accounts_v12',
 			'cron_hook'       => 'rhd_artny_directory_sync_accounts',
 			'api_fields'      => array(
 				'Name',
@@ -143,7 +143,7 @@ final class RHD_Artny_Directory_Config {
 			'description'     => __( 'Searchable individuals directory with filters for Xplor contacts.', 'rhd-artny-directory' ),
 			'icon'            => 'admin-users',
 			'table'           => 'Contact',
-			'cache_key'       => 'rhd_artny_directory_individuals_v10',
+			'cache_key'       => 'rhd_artny_directory_individuals_v11',
 			'cron_hook'       => 'rhd_artny_directory_sync_individuals',
 			'api_fields'      => array(
 				'FirstName',

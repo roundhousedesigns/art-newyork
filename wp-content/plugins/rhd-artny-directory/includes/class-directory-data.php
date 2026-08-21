@@ -76,9 +76,11 @@ final class RHD_Artny_Directory_Data {
 	public static function get_contacts( $type = RHD_Artny_Directory_Config::TYPE_ORGANIZATIONS, $force_refresh = false ) {
 		$payload = self::get_payload( $type, $force_refresh );
 
-		return isset( $payload['contacts'] ) && is_array( $payload['contacts'] )
+		$contacts = isset( $payload['contacts'] ) && is_array( $payload['contacts'] )
 			? $payload['contacts']
 			: array();
+
+		return self::filter_ineligible_contacts( $type, $contacts );
 	}
 
 	/**
@@ -367,6 +369,11 @@ final class RHD_Artny_Directory_Data {
 	 * @return array<string, mixed>|null
 	 */
 	private static function transform_organization_record( $record, &$labels, $config, $primary_contact_map = null ) {
+		$id = isset( $record['ID'] ) ? trim( (string) $record['ID'] ) : '';
+		if ( RHD_Artny_Directory_Exclusions::is_ineligible( RHD_Artny_Directory_Config::TYPE_ORGANIZATIONS, $id ) ) {
+			return null;
+		}
+
 		if ( ! self::organization_membership_is_active( $record, $primary_contact_map ) ) {
 			return null;
 		}
@@ -384,6 +391,7 @@ final class RHD_Artny_Directory_Data {
 			: ( isset( $record['Description'] ) ? sanitize_textarea_field( (string) $record['Description'] ) : '' );
 
 		$contact = array(
+			'ID'                          => $id,
 			'Name'                        => $name,
 			'Description'                 => $description,
 			'Website'                     => self::resolve_organization_website( $record, $primary ),
@@ -426,6 +434,11 @@ final class RHD_Artny_Directory_Data {
 	 * @return array<string, mixed>|null
 	 */
 	private static function transform_individual_record( $record, &$labels, $config ) {
+		$id = isset( $record['ID'] ) ? trim( (string) $record['ID'] ) : '';
+		if ( RHD_Artny_Directory_Exclusions::is_ineligible( RHD_Artny_Directory_Config::TYPE_INDIVIDUALS, $id ) ) {
+			return null;
+		}
+
 		if ( self::is_membership_expired( $record['MembershipExpiry'] ?? null, false ) ) {
 			return null;
 		}
@@ -460,6 +473,7 @@ final class RHD_Artny_Directory_Data {
 		}
 
 		$contact = array(
+			'ID'               => $id,
 			'Name'             => $name,
 			'Description'      => $description,
 			'Website'          => $website,
@@ -863,6 +877,32 @@ final class RHD_Artny_Directory_Data {
 		}
 
 		return (string) esc_url_raw( $url, array( 'https', 'http' ) );
+	}
+
+	/**
+	 * Drop contacts flagged as ineligible (defense against stale cache).
+	 *
+	 * @param string                             $type     organizations|individuals.
+	 * @param array<int, array<string, mixed>>   $contacts Cached contact rows.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private static function filter_ineligible_contacts( $type, $contacts ) {
+		$filtered = array();
+
+		foreach ( $contacts as $contact ) {
+			if ( ! is_array( $contact ) ) {
+				continue;
+			}
+
+			$id = isset( $contact['ID'] ) ? trim( (string) $contact['ID'] ) : '';
+			if ( '' !== $id && RHD_Artny_Directory_Exclusions::is_ineligible( $type, $id ) ) {
+				continue;
+			}
+
+			$filtered[] = $contact;
+		}
+
+		return $filtered;
 	}
 
 	/**

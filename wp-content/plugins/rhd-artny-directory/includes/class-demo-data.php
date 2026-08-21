@@ -75,6 +75,7 @@ final class RHD_Artny_Directory_Demo_Data {
 	private static function organizations_contacts() {
 		return array(
 			array(
+				'ID'                          => 'demo-org-new-georges',
 				'Name'                        => 'New Georges',
 				'Description'                 => 'New Georges advocates for an intergenerational ecosystem of exuberant theatrical minds, furthering fierce new works along with long-term wellbeing, expanding aesthetic boundaries and gender equity in tandem. Since 1992, we\'ve imagined a new kind of artistic home–a relaxed, participatory culture, a productive oasis in a competitive field.',
 				'Website'                     => 'http://www.newgeorges.org',
@@ -87,6 +88,7 @@ final class RHD_Artny_Directory_Demo_Data {
 				'PublicProgrammingLocations'  => array( 'bronx', 'brooklyn', 'manhattan', 'queens' ),
 			),
 			array(
+				'ID'                          => 'demo-org-arts-ignite',
 				'Name'                        => 'Arts Ignite',
 				'Description'                 => 'At Arts Ignite, their mission is to develop agency in youth through the arts. Through performing arts, visual arts, and creative writing, they support young people ages 4-22 to discover the joy and power of making art to share their voices, tell their stories, and transform their lives.',
 				'Website'                     => 'https://artsignite.org',
@@ -98,6 +100,7 @@ final class RHD_Artny_Directory_Demo_Data {
 				'PublicProgrammingLocations'  => array( 'bronx', 'brooklyn', 'manhattan' ),
 			),
 			array(
+				'ID'                          => 'demo-org-broadway-advocacy',
 				'Name'                        => 'Broadway Advocacy Coalition',
 				'Description'                 => 'Broadway Advocacy Coalition (BAC) is an arts-based advocacy organization that unites artists and directly impacted advocates to develop story-based artivism that advances justice and drives systemic change. Through its signature Theater of Change methodology, BAC leverages the arts and storytelling as powerful tools to imagine a world without systemic racism and the carceral state.',
 				'Website'                     => 'https://www.broadwayadvocacycoalition.org',
@@ -109,6 +112,7 @@ final class RHD_Artny_Directory_Demo_Data {
 				'PublicProgrammingLocations'  => array( 'manhattan', 'brooklyn' ),
 			),
 			array(
+				'ID'                          => 'demo-org-staten-island',
 				'Name'                        => 'Staten Island Ensemble',
 				'Description'                 => 'A borough-based collective producing new work and community forums for Staten Island artists, with a focus on accessible rehearsal space and interborough collaboration.',
 				'Website'                     => 'https://example.org/staten-island-ensemble',
@@ -148,6 +152,7 @@ final class RHD_Artny_Directory_Demo_Data {
 	private static function individuals_contacts() {
 		return array(
 			array(
+				'ID'                => 'demo-ind-jordan-ellis',
 				'Name'              => 'Jordan Ellis',
 				'Description'       => 'Playwright and director developing new works rooted in community storytelling and experimental form.',
 				'Website'           => 'https://example.org/jordan-ellis',
@@ -159,6 +164,7 @@ final class RHD_Artny_Directory_Demo_Data {
 				'ArtisticPractices' => array( 'new-play-development', 'devised-theater' ),
 			),
 			array(
+				'ID'                => 'demo-ind-maya-chen',
 				'Name'              => 'Maya Chen',
 				'Description'       => 'Performance artist and educator whose practice centers participatory workshops and interdisciplinary collaboration.',
 				'Website'           => '',
@@ -169,6 +175,7 @@ final class RHD_Artny_Directory_Demo_Data {
 				'ArtisticPractices' => array( 'community-engagement', 'experimental-work' ),
 			),
 			array(
+				'ID'                => 'demo-ind-sam-rivera',
 				'Name'              => 'Sam Rivera',
 				'Description'       => 'Lighting and scenic designer working across Off-Off-Broadway and independent production.',
 				'Website'           => 'https://samrivera.example',

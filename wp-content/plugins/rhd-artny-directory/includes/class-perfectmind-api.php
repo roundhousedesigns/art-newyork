@@ -306,6 +306,7 @@ final class RHD_Artny_Directory_Perfectmind_Api {
 		return self::pick_fields(
 			$row,
 			array(
+				'ID',
 				'Name',
 				'Description',
 				'Website',
@@ -334,6 +335,7 @@ final class RHD_Artny_Directory_Perfectmind_Api {
 		$record = self::pick_fields(
 			$row,
 			array(
+				'ID',
 				'FirstName',
 				'MiddleName',
 				'LastName',
